@@ -100,7 +100,7 @@ class Baseband:
         """
         Read the contents of preset, without activating it
         """
-        assert preset_nr >= 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
+        assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_VIEW_PRESET, preset_nr)
         # Preset is now loaded in preview settings
         raw_buffer = self._slave.exchange(I2C_ACCESS_VIEW_SETTINGS, sizeof(SETTINGS))

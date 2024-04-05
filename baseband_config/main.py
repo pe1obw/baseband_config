@@ -27,8 +27,8 @@ def main():
     parser.add_argument('--pulse_gpio', type=int, help='Pulse GPIO pin for <n> seconds')
     parser.add_argument('--read_meters', action='store_true', help='Show VU meter')
     parser.add_argument('--reboot', action='store_true', help='Reboot baseband')
-    parser.add_argument('--load_preset', type=int, help='Load preset <n>')
-    parser.add_argument('--store_preset', type=int, help='Store actual settings to preset <n>')
+    parser.add_argument('--load_preset', type=int, help='Load preset <n> (1..31)')
+    parser.add_argument('--store_preset', type=int, help='Store actual settings to preset <n> (1..31)')
     parser.add_argument('--show_presets', action='store_true', help='Show all used presets')
     args = parser.parse_args()
 
@@ -53,10 +53,12 @@ def main():
         print('\nActual settings:')
         settings = bb.read_settings()
         bb.dump_settings(settings)
-        print('\nPreset status (preset 0 stores the actual settings):')
+        print('\nPreset status:')
         preset_flags = bb.load_preset_status()
         for i, flag in enumerate(preset_flags):
-            print(f'Preset {i:2}: {bb.get_preset(i).name.decode() if flag else "Empty":14}', end='' if (i + 1) % 4 else '\n')
+            if i == 0:
+                continue
+            print(f'Preset {i:2}: {bb.get_preset(i).name.decode() if flag else "Empty":14}', end='' if i % 4 else '\n')
 
     if args.read_meters:
         while True:
@@ -98,7 +100,9 @@ def main():
     if args.show_presets:
         preset_flags = bb.load_preset_status()
         for i, flag in enumerate(preset_flags):
-            print(f'Preset {i}: {"Used" if flag else "Empty"}')
+            if i == 0:
+                continue
+            print(f'Preset {i}: {"" if flag else "Empty"}')
             if flag:
                 bb.dump_settings(bb.get_preset(i))
                 print()
