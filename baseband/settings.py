@@ -82,7 +82,7 @@ class SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
         ("name", c_char*12),
-	    ("fm", FM_SETTINGS*4),
-	    ("nicam", NICAM_SETTINGS),
+        ("fm", FM_SETTINGS*4),
+        ("nicam", NICAM_SETTINGS),
         ("video", VIDEO_SETTINGS)
     ]
