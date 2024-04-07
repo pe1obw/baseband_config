@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--serial', type=str, help='Serial number of the FTDI device')
     parser.add_argument('--description', type=str, help='Description of the FTDI device')
     parser.add_argument('--info', action='store_true', help='Read device info')
+    parser.add_argument('--set', type=str, help='Set a setting (e.g. --set video.video_mode=PAL')
     parser.add_argument('--settings_to_file', type=str, help='Store actual settings to file')
     parser.add_argument('--settings_from_file', type=str, help='Read settings from file and write to baseband')
     parser.add_argument('--dump_osd', action='store_true', help='Dump OSD memory')
@@ -81,10 +82,11 @@ def main():
 
     if args.settings_from_file:
         with open(args.settings_from_file, 'r') as file:
+            current_settings = bb.read_settings()
             serialized_settings = json.load(file)
-        settings = bb.deserialize(serialized_settings, SETTINGS)
-        bb.dump_settings(settings)
-        bb.write_settings(settings)
+            settings = bb.deserialize(serialized_settings, SETTINGS, current_settings)
+            bb.write_settings(settings)
+            bb.dump_settings(settings)
         print(f'Settings read from {args.settings_from_file} and written to baseband')
 
     if args.dump_osd:
@@ -122,6 +124,10 @@ def main():
     if args.erase_preset:
         bb.erase_preset(args.erase_preset)
         print(f'Preset {args.erase_preset} erased')
+
+    if args.set:
+        setting, value = args.set.split('=')
+        bb.set_setting(setting, value)
 
 if __name__ == '__main__':
     main()

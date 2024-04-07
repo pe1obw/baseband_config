@@ -5,12 +5,13 @@ Baseband control class
 """
 import time
 from ctypes import Array, Structure, sizeof
+from typing import Any, Optional
 
 from baseband.actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
 from baseband.info import get_info
 from baseband.osd import dump_osd_memory
-from baseband.settings import AUDIO_INPUT, FM_BANDWIDTH, PREEMPHASIS, SETTINGS
+from baseband.settings import AUDIO_INPUT, FM_BANDWIDTH, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 from baseband.usb import get_device
 from pyftdi.i2c import I2cController
 
@@ -30,6 +31,23 @@ I2C_ACCESS_COMMAND_STORE_PRESET = bytearray([0x30, 0x02])  # <preset nr> Store c
 I2C_ACCESS_COMMAND_ERASE_PRESET = bytearray([0x30, 0x03])  # <preset nr> Erase current config in preset 1..31
 I2C_ACCESS_COMMAND_VIEW_PRESET = bytearray([0x30, 0x04])  # <preset nr> Read config from preset 1..31 and copy to 'preview' settings
 I2C_ACCESS_COMMAND_REBOOT = bytearray([0x30, 0x05])  # <1> Reboot FPGA board after 500ms delay
+
+# Helper to convert enums to strings and vice versa. The enum classes have the same name as fields in the SETTINGS struct.
+SETTINGS_ENUMS = [VIDEO_MODE, VIDEO_IN, OSD_MODE, FM_BANDWIDTH, AUDIO_INPUT, PREEMPHASIS, NICAM_BANDWIDTH]
+
+
+def enumstring_to_int(field_name: str, value: str) -> Any:
+    """
+    Convert a string to the correct enum type if applicable, else assume int.
+    """
+    print(f'Convert {value} to {field_name}')
+    for enum in SETTINGS_ENUMS:
+        if field_name == enum.__name__.lower():
+            try:
+                return enum[value].value
+            except KeyError:
+                raise ValueError(f'Invalid value {value} for {field_name}, must be one of {", ".join([e.name for e in enum])}')
+    return int(value)
 
 
 class Baseband:
@@ -127,6 +145,37 @@ class Baseband:
         assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_ERASE_PRESET, preset_nr)
 
+    def set_setting(self, setting_name: str, value: str) -> None:
+        """
+        Set a setting
+        """
+        # get current settings
+        current = settings = self.read_settings()
+
+        # convert dot-separated setting name to a path of field names
+        # and try to find corresponding fields in the settings struct.
+        setting_path = setting_name.split('.')
+        while setting_path:
+            path = setting_path.pop(0)
+            for field in current._fields_:
+                field_name, field_type = field[0], field[1]
+                if path == field_name:
+                    if issubclass(field_type, Array) and issubclass(field_type._type_, Structure):
+                        index = int(setting_path.pop(0))  # next element is the index
+                        current = getattr(current, field_name)[index]
+                    else:
+                        next_element = getattr(current, field_name)
+                        if not isinstance(next_element, Structure):
+                            if isinstance(next_element, int):
+                                setattr(current, field_name, enumstring_to_int(field_name, value))
+                            else:
+                                setattr(current, field_name, value.encode('utf-8'))  # Convert to bytes
+                            break
+                        current = next_element
+                continue
+        self.dump_settings(settings)
+        self.write_settings(settings)
+
     def reboot(self) -> None:
         """
         Reboot the Baseband
@@ -162,9 +211,9 @@ class Baseband:
             print(f' AM={settings.fm[i].am},' if i < 2 else '      ', end='')   # Only the first two can do AM
             print(f' Ena={settings.fm[i].enable}')
         print(f'NICAM settings: {settings.nicam.rf_frequency_khz} kHz, level={settings.nicam.rf_level},'
-            f' BW={settings.nicam.bandwidth}, input={settings.nicam.input}, ena={settings.nicam.enable}')
-        print(f'VIDEO settings: level={settings.video.video_level}, mode={settings.video.video_mode}, invert={settings.video.invert_video},'
-            f' osd={settings.video.osd_mode}, input={settings.video.video_in}, ena={settings.video.enable}')
+            f' BW={NICAM_BANDWIDTH(settings.nicam.bandwidth).name}, input={settings.nicam.input}, ena={settings.nicam.enable}')
+        print(f'VIDEO settings: level={settings.video.video_level}, mode={VIDEO_MODE(settings.video.video_mode).name}, invert={settings.video.invert_video},'
+            f' osd_mode={OSD_MODE(settings.video.osd_mode).name}, input={VIDEO_IN(settings.video.video_in).name}, ena={settings.video.enable}')
 
     def dump_osd_memory(self) -> None:
         """
@@ -203,8 +252,11 @@ class Baseband:
         return serialized_settings
 
     @staticmethod
-    def deserialize(serialized_settings: str, structure: Structure) -> Structure:
-        obj = structure()
+    def deserialize(serialized_settings: str, structure: Structure, input: Optional[Structure] = None) -> Structure:
+        """
+        Create or update structure from json
+        """
+        obj = input or structure()
         for field in structure._fields_:
             field_name, field_type = field[0], field[1]
             if field_name in serialized_settings:
@@ -212,12 +264,9 @@ class Baseband:
                 if issubclass(field_type, Structure):
                     setattr(obj, field_name, Baseband.deserialize(field_value, field_type))
                 elif issubclass(field_type, Array) and issubclass(field_type._type_, Structure):
-                    # Check if it's an array of structures
                     element_type = field_type._type_
-                    array_obj = field_type()
                     for i, item in enumerate(field_value):
-                        array_obj[i] = Baseband.deserialize(item, element_type)
-                    setattr(obj, field_name, array_obj)
+                        getattr(obj, field_name)[i] = Baseband.deserialize(item, element_type, getattr(obj, field_name)[i]) # if input else None)
                 else:
                     # Basic type handling
                     if isinstance(field_value, str):
