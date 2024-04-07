@@ -4,10 +4,8 @@ Structs converted from .h file.
 
 (C) 2024 PE1OBW, PE1MUD
 """
-import time
-from ctypes import Structure, c_uint16, c_uint8, c_char, Array, sizeof
+from ctypes import Structure, c_uint16, c_uint8, c_char
 from enum import Enum
-from pyftdi.i2c import I2cPort
 
 
 I2C_ACCESS_SETTINGS = bytearray([0x10, 0x00])
