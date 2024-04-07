@@ -57,12 +57,16 @@ baseband_config --help
 baseband_config --info
 ```
 
+To create a file with the settings, stored as json:
+
 ```bash
 baseband_config --settings_to_file settings.json`
 ```
 
-This creates a file with the settings, stored as json.
-This file can be modified and its content can be written back to the baseband using:
+The settings file can be modified and its contents can be written back.
+It is also possible to write back a partial json (i.e., only these settings
+will be modified).
+To write back to the baseband:
 
 ```bash
 baseband_config --settings_from_file settings.json
@@ -73,6 +77,12 @@ To update the firmware and reboot:
 ```bash
 baseband_config --upgrade baseband_0.26.bin
 baseband_config --reboot
+```
+
+Set carrier frequency of the first FM carrier:
+
+```bash
+baseband_config --set fm.0.rf_frequency_khz=7020
 ```
 
 ## Issues
