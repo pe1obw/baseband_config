@@ -29,6 +29,7 @@ def main():
     parser.add_argument('--reboot', action='store_true', help='Reboot baseband')
     parser.add_argument('--load_preset', type=int, help='Load preset <n> (1..31)')
     parser.add_argument('--store_preset', type=int, help='Store actual settings to preset <n> (1..31)')
+    parser.add_argument('--erase_preset', type=int, help='Erase preset <n> (1..31)')
     parser.add_argument('--show_presets', action='store_true', help='Show all used presets')
     args = parser.parse_args()
 
@@ -109,18 +110,18 @@ def main():
 
     if args.load_preset:
         bb.load_preset(args.load_preset)
-        print(f'Preset {args.load_preset} loaded')
+        print(f'Preset {args.load_preset} loaded:')
         bb.dump_settings(bb.read_settings())
 
     if args.store_preset:
         settings = bb.read_settings()
-        settings.name = f'Preset {args.store_preset}'.encode()
         bb.write_settings(settings)
         bb.store_preset(args.store_preset)
-        bb.dump_settings(bb.read_settings())
-        settings.name = f'Hallo'.encode()
-        bb.write_settings(settings)
-        print(f'Settings stored to preset {args.store_preset}')
+        print(f'Actual settings stored to preset {args.store_preset}')
+
+    if args.erase_preset:
+        bb.erase_preset(args.erase_preset)
+        print(f'Preset {args.erase_preset} erased')
 
 if __name__ == '__main__':
     main()

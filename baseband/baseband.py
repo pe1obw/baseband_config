@@ -120,6 +120,13 @@ class Baseband:
         assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_STORE_PRESET, preset_nr)
 
+    def erase_preset(self, preset_nr: int) -> None:
+        """
+        Erase a preset
+        """
+        assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
+        self._send_command(I2C_ACCESS_COMMAND_ERASE_PRESET, preset_nr)
+
     def reboot(self) -> None:
         """
         Reboot the Baseband
