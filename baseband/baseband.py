@@ -218,6 +218,10 @@ class Baseband:
         firmware_control = FirmwareControl(self._slave)
         firmware_control.flash_firmware(firmware)
 
+    def read_firmware(self) -> bytes:
+        firmware_control = FirmwareControl(self._slave)
+        return firmware_control.read_firmware()
+
     def read_actuals(self) -> HW_INPUTS:
         """
         Read actuals from the Baseband

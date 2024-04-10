@@ -110,6 +110,12 @@ def main():
         with open(args.upgrade, 'rb') as file:
             firmware_data = file.read()
         bb.flash_firmware(firmware_data)
+    if args.download_firmware:
+        assert args.usb_easymcp, 'Firmware download is only supported with EasyMCP2221'
+        firmware_data = bb.read_firmware()
+        with open(args.download_firmware, 'wb') as file:
+            file.write(firmware_data)
+        print(f'Firmware downloaded to {args.download_firmware}')
 
     if args.reboot:
         bb.reboot()

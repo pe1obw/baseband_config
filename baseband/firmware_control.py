@@ -60,7 +60,7 @@ class FirmwareControl:
         """
         READ_BLOCK_SIZE = 1024
         firmware = bytearray()
-        for addr in range(FLASH_UPGRADE_START, FLASH_UPGRADE_START + 10, READ_BLOCK_SIZE):
+        for addr in range(FLASH_UPGRADE_START, FLASH_UPGRADE_END, READ_BLOCK_SIZE):
             data = self._m25p80_command(READ_DATA_BYTES, addr, bytearray(), READ_BLOCK_SIZE)
             firmware += data
             if addr & 0xFFFF == 0:  # 64 kB progress
