@@ -1,8 +1,13 @@
 """
 USB interface for the MCP2221A USB to I2C bridge.
+
+FIXME: The PyMCP2221A library has issues:
+- Read fails with more than a few bytes.
+- On failure, the bus gets stuck and does not recover.
 """
 from typing import Optional
 from PyMCP2221A import PyMCP2221A
+
 
 class UsbMcp2221:
     SLAVE_ADDR = 0xB0 // 2
@@ -18,10 +23,16 @@ class UsbMcp2221:
         return bytes(self.mcp.I2C_Read(self.SLAVE_ADDR, length))
 
     def exchange(self, data: bytes, length: int) -> bytes:
-        print(f'REad {length} bytes after writing {len(data)} bytes')
-        self.mcp.I2C_Write_No_Stop(self.SLAVE_ADDR, data)
-        result = self.mcp.I2C_Read_Repeated(self.SLAVE_ADDR, length)
-        assert result != -1, 'I2C read error'
+        # For now: write_non_stop and read_repeated do not work with > 12..30 bytes
+        # (depeding on PC!), hence this fix.
+        self.mcp.I2C_Write(self.SLAVE_ADDR, data)
+        result: bytes = []
+        while length > 0:
+            readlen = min(length, 12)
+            data = self.mcp.I2C_Read(self.SLAVE_ADDR, readlen)
+            assert data != -1, 'I2C read error'
+            result.extend(data)
+            length -= readlen
         return bytes(result)
 
     def pulse_gpio(self, gpio_nr: int, seconds: float):
