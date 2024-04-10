@@ -10,7 +10,6 @@ from typing import Any, Optional
 from baseband.actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
 from baseband.info import INFO
-from baseband.osd import dump_osd_memory
 from baseband.settings import AUDIO_INPUT, FM_BANDWIDTH, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 
 I2C_ACCESS_DISPLAY = bytearray([0x00, 0x00])  # R/W, maps to display memory, 40 columns x 16 rows = 640 bytes
@@ -198,7 +197,19 @@ class Baseband:
         """
         Read & print actual OSD contents
         """
-        dump_osd_memory(self._slave)
+        WIDTH = 40
+        HEIGHT = 16
+        result = self._slave.exchange(I2C_ACCESS_DISPLAY, WIDTH * HEIGHT)
+        for y in range(0, HEIGHT):
+            for x in range(0, WIDTH):
+                print (f'{result[x + WIDTH * y]:02X}', end=' ')
+            print('  [', end='')
+            for x in range(0, WIDTH):
+                i = x + WIDTH * y
+                char = result[i] if result[i] >= 32 and result[i] < 127 else 32
+                print (f'{chr(char)}', end='')
+            print(']')
+
 
     def flash_firmware(self, firmware: bytes) -> None:
         """
