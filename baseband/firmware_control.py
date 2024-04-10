@@ -4,7 +4,6 @@ Firmware configuration for the baseband board.
 (C) 2024 PE1OBW, PE1MUD
 """
 from typing import Optional
-from pyftdi.i2c import I2cPort
 
 I2C_ACCESS_FLASH = 0x7000  # R/W maps to flash SPI interface
 
@@ -36,7 +35,7 @@ class FirmwareControl:
     """
     This class is responsible for flashing the firmware to the baseband board
     """
-    def __init__(self, slave: I2cPort):
+    def __init__(self, slave):
         self._slave = slave
 
     def get_flash_id(self) -> None:
