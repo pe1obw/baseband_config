@@ -18,15 +18,3 @@ class INFO(Structure):
         ("sw_version_major", c_uint8)
     ]
 
-
-def get_info(slave: I2cPort) -> dict:
-    """
-    Read baseband info
-    """
-    result = slave.exchange(I2C_ACCESS_INFO, 40)
-    info = INFO.from_buffer_copy(result)
-    return {
-        'hw_version': info.hw_version,
-        'fpga_version': info.fpga_version,
-        'sw_version': f'{info.sw_version_major}.{info.sw_version_minor}'
-    }

@@ -11,13 +11,25 @@ import msvcrt
 import time
 from baseband.baseband import Baseband
 from baseband.settings import SETTINGS
+from baseband.usb_easymcp import UsbEasyMcp
+from baseband.usb_ftdi import UsbFtdi
+from baseband.usb_mcp2221 import UsbMcp2221
 
 
 def main():
     # Create an argument parser
     parser = argparse.ArgumentParser(description='Baseband Configuration Utility')
+
+    # USB driver selection
+    parser.add_argument('--usb_ftdi', action='store_true', help='Use FTDI USB to I2C bridge (=default)')
+    parser.add_argument('--usb_mcp2221', action='store_true', help='Use MCP2221A USB to I2C bridge with MCP2221A library')
+    parser.add_argument('--usb_easymcp', action='store_true', help='Use MCP2221A USB to I2C bridge with EasyMCP2221 library')
+
+    # FT232H specific arguments
     parser.add_argument('--serial', type=str, help='Serial number of the FTDI device')
     parser.add_argument('--description', type=str, help='Description of the FTDI device')
+
+    # Baseband commands
     parser.add_argument('--info', action='store_true', help='Read device info')
     parser.add_argument('--set', type=str, help='Set a setting (e.g. --set video.video_mode=PAL')
     parser.add_argument('--settings_to_file', type=str, help='Store actual settings to file')
@@ -34,15 +46,17 @@ def main():
     parser.add_argument('--show_presets', action='store_true', help='Show all used presets')
     args = parser.parse_args()
 
-    bb = Baseband()
-    bb.connect_usb(serial=args.serial, description=args.description)
+    if args.usb_mcp2221:
+        usb_driver = UsbMcp2221()
+    elif args.usb_easymcp:
+        usb_driver = UsbEasyMcp()
+    else:
+        usb_driver = UsbFtdi(serial=args.serial, description=args.description)
+    bb = Baseband(usb_driver)
 
     if args.pulse_gpio:
         bb.pulse_gpio(args.pulse_gpio, 6)
         return 0  # If pulse gpio is requested, do not do anything else (the baseband will be rebooted)
-
-    # Try to connect to the baseband
-    bb.connect_baseband()
 
     # Read device info
     info = bb.get_info()

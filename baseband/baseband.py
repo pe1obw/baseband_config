@@ -9,11 +9,9 @@ from typing import Any, Optional
 
 from baseband.actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
-from baseband.info import get_info
+from baseband.info import INFO
 from baseband.osd import dump_osd_memory
 from baseband.settings import AUDIO_INPUT, FM_BANDWIDTH, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
-from baseband.usb import get_device
-from pyftdi.i2c import I2cController
 
 I2C_ACCESS_DISPLAY = bytearray([0x00, 0x00])  # R/W, maps to display memory, 40 columns x 16 rows = 640 bytes
 I2C_ACCESS_FONT_MEMORY = bytearray([0x08, 0x00])  # R/W, maps to font memory, 128 characters, each 8x16 pixels = 2048 bytes
@@ -54,43 +52,24 @@ class Baseband:
     """
     This class is responsible for providing methods to control the Baseband.
     """
-    BB_SLAVE_ADDR = 0xB0//2
-    I2C_FREQUENCY = 50000  # Increasing this results in read errors, due to a bug in the FT232H driver/HW. See <https://github.com/eblot/pyftdi/issues/373>
-
-    def __init__(self):
-        self._device = None
-        self._i2c = None
-        self._slave = None
-
-    def connect_usb(self, serial=None, description=None):
-        """
-        Connect to the USB controller
-        """
-        self._device = get_device(serial, description)
-        self._i2c = I2cController()
-        self._i2c.configure(self._device, clockstretching=True, frequency=self.I2C_FREQUENCY)
-
-    def connect_baseband(self):
-        """
-        Connect to the Baseband
-        """
-        self._slave = self._i2c.get_port(self.BB_SLAVE_ADDR)
+    def __init__(self, usb_driver):
+        self._slave = usb_driver
 
     def pulse_gpio(self, gpio_nr: int, seconds: int) -> None:
-        assert gpio_nr > 2 and gpio_nr < 7, f'Invalid GPIO number for FT232H {gpio_nr}'
         print(f'Pulse GPIO pin {gpio_nr} for {seconds} seconds')
-        gpio = self._i2c.get_gpio()
-        gpio.set_direction(pins=1 << gpio_nr, direction=1 << gpio_nr)  # GPIO 6 as output
-        gpio.write(0)
-        time.sleep(seconds)
-        gpio.write(1 << gpio_nr)
+        self._slave.pulse_gpio(gpio_nr, seconds)
 
     def get_info(self) -> dict:
         """
         Get Baseband hw/sw version
         """
-        return get_info(self._slave)
-
+        result = self._slave.exchange(I2C_ACCESS_INFO, sizeof(INFO))
+        info = INFO.from_buffer_copy(result)
+        return {
+            'hw_version': info.hw_version,
+            'fpga_version': info.fpga_version,
+            'sw_version': f'{info.sw_version_major}.{info.sw_version_minor}'
+        }
     def read_settings(self) -> SETTINGS:
         """
         Get Baseband settings
