@@ -18,5 +18,5 @@ setup(
         'Programming Language :: Python :: 3.9',
     ],
     keywords='baseband i2c usb control',
-    install_requires=['pyftdi'],
+    install_requires=['pyftdi', 'EasyMCP2221', 'PyMCP2221A'],
 )
