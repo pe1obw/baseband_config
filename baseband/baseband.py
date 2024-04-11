@@ -186,13 +186,13 @@ class Baseband:
         print(f'Setting name: {settings.name.decode()}')
         print(f'FM settings:')
         for i in range(0, 4):
-            print(f'  {i+1}: {settings.fm[i].rf_frequency_khz} kHz,'
-                f' level={settings.fm[i].rf_level},'
+            print(f'  {i+1}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
+                f' rf_level={settings.fm[i].rf_level},'
                 f' input={AUDIO_INPUT(settings.fm[i].input).name},'
-                f' preemp={PREEMPHASIS(settings.fm[i].preemphasis).name},'
+                f' preemphasis={PREEMPHASIS(settings.fm[i].preemphasis).name},'
                 f' bw={FM_BANDWIDTH(settings.fm[i].bandwidth).name},', end='')
-            print(f' AM={settings.fm[i].am},' if i < 2 else '      ', end='')   # Only the first two can do AM
-            print(f' Ena={settings.fm[i].enable}')
+            print(f' am={settings.fm[i].am},' if i < 2 else '      ', end='')   # Only the first two can do AM
+            print(f' enable={settings.fm[i].enable}')
         print(f'NICAM settings: {settings.nicam.rf_frequency_khz} kHz, level={settings.nicam.rf_level},'
             f' BW={NICAM_BANDWIDTH(settings.nicam.bandwidth).name}, input={settings.nicam.input}, ena={settings.nicam.enable}')
         print(f'VIDEO settings: video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name}, '
