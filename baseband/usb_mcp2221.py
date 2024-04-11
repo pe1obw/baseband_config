@@ -3,6 +3,7 @@ USB interface for the MCP2221A USB to I2C bridge.
 
 FIXME: The PyMCP2221A library has issues:
 - Read fails with more than a few bytes.
+- Write fails with more than ~60 bytes.
 - On failure, the bus gets stuck and does not recover.
 """
 from typing import Optional
@@ -36,4 +37,4 @@ class UsbMcp2221:
         return bytes(result)
 
     def pulse_gpio(self, gpio_nr: int, seconds: float):
-        raise NotImplementedError('Pulse GPIO is not supported (yet) with MCP2221A')
+        raise NotImplementedError('Pulse GPIO is not supported (yet) with MCP2221A lib')

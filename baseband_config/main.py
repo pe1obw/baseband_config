@@ -16,6 +16,9 @@ from baseband.usb_ftdi import UsbFtdi
 from baseband.usb_mcp2221 import UsbMcp2221
 
 
+GPIO_PULSE_LENGTH = 3  # Pulse length in seconds
+
+
 def main():
     # Create an argument parser
     parser = argparse.ArgumentParser(description='Baseband Configuration Utility')
@@ -37,7 +40,7 @@ def main():
     parser.add_argument('--dump_osd', action='store_true', help='Dump OSD memory')
     parser.add_argument('--upgrade', type=str, help='Upgrade baseband firmware')
     parser.add_argument('--download_firmware', type=str, help='Download firmware from baseband')
-    parser.add_argument('--pulse_gpio', type=int, help='Pulse GPIO pin for <n> seconds')
+    parser.add_argument('--pulse_gpio', type=int, help=f'Pulse GPIO pin <n> for {GPIO_PULSE_LENGTH} seconds')
     parser.add_argument('--read_meters', action='store_true', help='Show VU meter')
     parser.add_argument('--reboot', action='store_true', help='Reboot baseband')
     parser.add_argument('--load_preset', type=int, help='Load preset <n> (1..31)')
@@ -54,8 +57,8 @@ def main():
         usb_driver = UsbFtdi(serial=args.serial, description=args.description)
     bb = Baseband(usb_driver)
 
-    if args.pulse_gpio:
-        bb.pulse_gpio(args.pulse_gpio, 6)
+    if args.pulse_gpio is not None:
+        bb.pulse_gpio(args.pulse_gpio, GPIO_PULSE_LENGTH)
         return 0  # If pulse gpio is requested, do not do anything else (the baseband will be rebooted)
 
     # Read device info

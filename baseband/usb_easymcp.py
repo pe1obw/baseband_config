@@ -24,4 +24,10 @@ class UsbEasyMcp:
         return bytes(result)
 
     def pulse_gpio(self, gpio_nr: int, seconds: float):
-        raise NotImplementedError('Pulse GPIO is not supported (yet) with MCP2221A')
+        assert seconds > 0, 'Pulse time must be > 0'
+        assert gpio_nr >= 0 and gpio_nr <= 3, 'Invalid GPIO number, must be 0..3 for MCP2221A'
+        params = {0: 'gp0', 1: 'gp1', 2: 'gp2', 3: 'gp3'}
+        self.mcp.set_pin_function(**{params[gpio_nr]: "GPIO_OUT"})
+        self.mcp.GPIO_write(**{params[gpio_nr]: False})
+        time.sleep(seconds)
+        self.mcp.GPIO_write(**{params[gpio_nr]: True})
