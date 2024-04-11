@@ -37,7 +37,6 @@ def enumstring_to_int(field_name: str, value: str) -> Any:
     """
     Convert a string to the correct enum type if applicable, else assume int.
     """
-    print(f'Convert {value} to {field_name}')
     for enum in SETTINGS_ENUMS:
         if field_name == enum.__name__.lower():
             try:
@@ -135,12 +134,16 @@ class Baseband:
         setting_path = setting_name.split('.')
         while setting_path:
             path = setting_path.pop(0)
+            found = False
             for field in current._fields_:
                 field_name, field_type = field[0], field[1]
                 if path == field_name:
+                    found = True
                     if issubclass(field_type, Array) and issubclass(field_type._type_, Structure):
                         index = int(setting_path.pop(0))  # next element is the index
                         current = getattr(current, field_name)[index]
+                    elif issubclass(field_type, Structure):
+                        current = getattr(current, field_name)
                     else:
                         next_element = getattr(current, field_name)
                         if not isinstance(next_element, Structure):
@@ -150,7 +153,9 @@ class Baseband:
                                 setattr(current, field_name, value.encode('utf-8'))  # Convert to bytes
                             break
                         current = next_element
-                continue
+                    break
+            if not found:
+                raise ValueError(f'Invalid setting name {setting_name}, field {path} not found in {[field[0] for field in current._fields_]}')
         self.dump_settings(settings)
         self.write_settings(settings)
 
@@ -190,8 +195,9 @@ class Baseband:
             print(f' Ena={settings.fm[i].enable}')
         print(f'NICAM settings: {settings.nicam.rf_frequency_khz} kHz, level={settings.nicam.rf_level},'
             f' BW={NICAM_BANDWIDTH(settings.nicam.bandwidth).name}, input={settings.nicam.input}, ena={settings.nicam.enable}')
-        print(f'VIDEO settings: level={settings.video.video_level}, mode={VIDEO_MODE(settings.video.video_mode).name}, invert={settings.video.invert_video},'
-            f' osd_mode={OSD_MODE(settings.video.osd_mode).name}, input={VIDEO_IN(settings.video.video_in).name}, ena={settings.video.enable}')
+        print(f'VIDEO settings: video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name}, '
+              f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, '
+              f'input={VIDEO_IN(settings.video.video_in).name}, ena={settings.video.enable}')
 
     def dump_osd_memory(self) -> None:
         """
