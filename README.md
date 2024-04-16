@@ -126,3 +126,6 @@ To store the actual settings to preset 10:
 ```bash
 baseband_config --usb_ftdi --store_preset=10
 ```
+
+Screenshot:
+![alt text](screenshot.png)
