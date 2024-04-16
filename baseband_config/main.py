@@ -78,6 +78,7 @@ def main():
             if i == 0:
                 continue
             print(f'Preset {i:2}: {bb.get_preset(i).name.decode() if flag else "Empty":14}', end='' if i % 4 else '\n')
+        print()
 
     if args.read_meters:
         while True:
@@ -107,6 +108,7 @@ def main():
         print(f'Settings read from {args.settings_from_file} and written to baseband')
 
     if args.dump_osd:
+        print('OSD memory contents:')
         bb.dump_osd_memory()
 
     if args.upgrade:
