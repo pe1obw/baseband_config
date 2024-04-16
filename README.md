@@ -16,13 +16,19 @@ unusable for some commands. The FT232H is the only supported FTDI chip
 that offers true open drain outputs, but other FTDI devices might be used
 as well (using diodes). See <https://eblot.github.io/pyftdi/installation.html>
 for more information about the supported USB interfaces and how to connect
-and install.
+and install. The MCP2221A does support clock stretching, but I've read stories
+that it could 'hang' every now and then. Also, the interface is a little more
+expensive (16 euro instead of 13 for the FTDI boards, at Amazon).
 
-The CP2221A does support clock stretching, but the drivers have issues.The
-software supports two MCP2221A Python drivers: EasyMCP2221 and PyMCP2221A.
-EasyMCP2221A works best, but shows very long delays between commands on one of
-my PCs. PyMCP2221A has multiple problems and is not recommended as it does not
-support firmware upgrade yet and is known to leave the i2c bus in a hang state.
+The software supports two MCP2221A Python drivers: EasyMCP2221 and PyMCP2221A.
+
+EasyMCP2221A works well with the latest version (1.7.2). On my machines, it
+operates reliable at 400 kHz and I've not observed any 'hangs'. Overall speed
+is limited by the USB turnaround times, this is common for all chips/drivers.
+
+The PyMCP2221A driver shows multiple issues. It works, somewhat, but it is not
+recommended as firmware upgrade doesn't work yet and I've seen it leaving the
+bus in a 'hang' state (SDA/SCL low forever).
 
 The software consists of two parts, a library `baseband` and an example
 application `baseband_config`.

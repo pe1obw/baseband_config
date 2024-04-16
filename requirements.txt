@@ -1,4 +1,4 @@
-EasyMCP2221==1.7.1
+EasyMCP2221==1.7.2
 hidapi==0.14.0
 pyftdi==0.55.3
 PyMCP2221A==1.4.0
