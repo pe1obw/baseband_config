@@ -82,7 +82,7 @@ Show all options
 baseband_config --help
 ```
 
-Use MCP2221 chip, show baseband info (version and actual settings)
+Show baseband info (version and actual settings)
 
 ```bash
 baseband_config --usb_ftdi --info
