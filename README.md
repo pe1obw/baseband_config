@@ -6,7 +6,6 @@ The baseband has an i2c interface which can be used to fully control it.
 More information about the baseband can be found on <https://fm-atv.nl>.
 
 This tool controls the baseband from a PC using a USB<->I2C interface.
-Currently, interface with the following chips are supported:
 
 ## Supported interfaces
 
