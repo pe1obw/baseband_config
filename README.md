@@ -28,8 +28,8 @@ was low and the interface needed to be reset.
 
 The software supports two MCP2221 Python drivers: EasyMCP2221 and PyMCP2221A. 
 EasyMCP2221A works well with the latest version (1.7.2). On my machines, it
-operates reliable at 400 kHz and I've not observed any 'hangs'. Overall speed
-is limited by the USB turnaround times, this is common for all chips/drivers.
+operates reliable at 400 kHz. Overall speed is limited by the USB turnaround 
+times, this is common for all chips/drivers.
 
 The PyMCP2221A driver shows multiple issues. It works, somewhat, but it is not
 recommended as firmware upgrade doesn't work yet and I've seen it leaving the
