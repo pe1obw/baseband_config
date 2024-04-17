@@ -8,20 +8,26 @@ More information about the baseband can be found on <https://fm-atv.nl>.
 This tool controls the baseband from a PC using a USB<->I2C interface.
 Currently, interface with the following chips are supported:
 
-- The FTDI FT232H (others might work, but have no open drain output)
-- The MCP2221A
+## Supported interfaces
 
-Both have issues. The FT232H does not support clock stretching, making it
-unusable for some commands. The FT232H is the only supported FTDI chip
-that offers true open drain outputs, but other FTDI devices might be used
-as well (using diodes). See <https://eblot.github.io/pyftdi/installation.html>
-for more information about the supported USB interfaces and how to connect
-and install. The MCP2221A does support clock stretching, but I've read stories
-that it could 'hang' every now and then. Also, the interface is a little more
-expensive (16 euro instead of 13 for the FTDI boards, at Amazon).
+### FTDI FT232H 
 
-The software supports two MCP2221A Python drivers: EasyMCP2221 and PyMCP2221A.
+Other FTDI chips might work, but have no open drain output.
+The FT232H does not support clock stretching, making it unusable for most
+flash access commands. The FT232H is the only supported FTDI chip that offers
+true open drain outputs, but other FTDI devices might be used as well 
+(using diodes). See <https://eblot.github.io/pyftdi/installation.html>
+for more information about the supported devices, and how to connect and 
+install. 
 
+### Microchip MCP2221
+
+The MCP2221A does support clock stretching, but it can leave the i2c bus in a
+'hang' state when a transfer is terminated unexpectedly. I could reproduce this
+by terminating the program while reading the flash contents, after that SDA
+was low and the interface needed to be reset. 
+
+The software supports two MCP2221 Python drivers: EasyMCP2221 and PyMCP2221A. 
 EasyMCP2221A works well with the latest version (1.7.2). On my machines, it
 operates reliable at 400 kHz and I've not observed any 'hangs'. Overall speed
 is limited by the USB turnaround times, this is common for all chips/drivers.
@@ -30,18 +36,22 @@ The PyMCP2221A driver shows multiple issues. It works, somewhat, but it is not
 recommended as firmware upgrade doesn't work yet and I've seen it leaving the
 bus in a 'hang' state (SDA/SCL low forever).
 
+## Software
+
 The software consists of two parts, a library `baseband` and an example
 application `baseband_config`.
 `Baseband_config` is a command-line program that supports export and import
 of the baseband settings, read out of actual audio and video levels, upgrading
 the firmware and more.
 
+## GPIO
+
 Both the FT232H and the MCP2221A have a few GPIO pins that can be used together
 with the i2c functionality. The code contains a command to pulse a GPIO pin
 (active low), for example to reset the board remotely. For the FT232H, gpio's
 3...6 are available, on the MCP2221A you can use GPIO0..3. On the MCP, however,
-the GPIOs seem to have predefined functions; I see GPIO0 pulsing at 50 Hz when
-connecting to the USB port...
+the GPIOs seem to have predefined functions; I see GPIO0 pulsing at 50 Hz after
+the device is connected to the USB port...
 
 ## Installation
 
@@ -68,9 +78,12 @@ with SCL and SDA. Leave the +5V on the Baseband unconnected!
 
 Then install the software:
 
-- For Windows and the FT232H only: install the 'Zadig' tool, and replace
-the existing driver with `libusb-win32` (see the pyftdi documentation).
-- For Linux and the MCP2221A only: follow the instructions on 
+- Install drivers (if applicable)
+    - For the FT232H: follow the instructions on 
+<https://eblot.github.io/pyftdi/installation.html>. For Windows, you have to 
+install the 'Zadig' tool, and replace the existing driver with `libusb-win32`.
+    - For the MCP2221A: under Windows, it worked out of the box for me. For Linux,
+follow the instructions on 
 <https://learn.adafruit.com/circuitpython-libraries-on-any-computer-with-mcp2221/linux>
 - Download the codebase
 - Install the tool with `pip install -e .` (the `-e` option installs the
