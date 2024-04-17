@@ -3,28 +3,35 @@
 THe PE1MUD/PE1OBW Digital Baseband is a hardware device to produce a baseband
 signal for analog FM television as used by radio amateurs.
 The baseband has an i2c interface which can be used to fully control it.
+This tool controls the baseband from a PC using a USB<->I2C interface.
 More information about the baseband can be found on <https://fm-atv.nl>.
 
-This tool controls the baseband from a PC using a USB<->I2C interface.
+The software presented here consists of two parts, a library `baseband` and
+an example application `baseband_config`.
+`Baseband_config` is a command-line program that supports export and import
+of the baseband settings, read out of actual audio and video levels, upgrading
+the firmware and more.
 
 ## Supported interfaces
 
+Interfaces based on two different chips are supported.
+
 ### FTDI FT232H 
 
-Other FTDI chips might work, but have no open drain output.
-The FT232H does not support clock stretching, making it unusable for most
-flash access commands. The FT232H is the only supported FTDI chip that offers
-true open drain outputs, but other FTDI devices might be used as well 
-(using diodes). See <https://eblot.github.io/pyftdi/installation.html>
-for more information about the supported devices, and how to connect and 
-install. 
+The FTDI chips do not support clock stretching. This limits the speed to
+50 kHz and makes the tool unusable for some flash access commands
+(although firmware upgrading works). The FT232H is the only supported 
+FTDI chip that offers true open drain outputs, but other FTDI devices might
+be used as well, using a workaround (diodes). See 
+<https://eblot.github.io/pyftdi/installation.html> for more information. 
 
 ### Microchip MCP2221
 
 The MCP2221A does support clock stretching, but it can leave the i2c bus in a
 'hang' state when a transfer is terminated unexpectedly. I could reproduce this
 by terminating the program while reading the flash contents, after that SDA
-was low and the interface needed to be reset. 
+stayed low and the interface needed to be reset. This problem might be fixed
+in the future...
 
 The software supports two MCP2221 Python drivers: EasyMCP2221 and PyMCP2221A. 
 EasyMCP2221A works well with the latest version (1.7.2). On my machines, it
@@ -34,14 +41,6 @@ times, this is common for all chips/drivers.
 The PyMCP2221A driver shows multiple issues. It works, somewhat, but it is not
 recommended as firmware upgrade doesn't work yet and I've seen it leaving the
 bus in a 'hang' state (SDA/SCL low forever).
-
-## Software
-
-The software consists of two parts, a library `baseband` and an example
-application `baseband_config`.
-`Baseband_config` is a command-line program that supports export and import
-of the baseband settings, read out of actual audio and video levels, upgrading
-the firmware and more.
 
 ## GPIO
 
