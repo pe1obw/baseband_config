@@ -70,6 +70,9 @@ Then install the software:
 
 - For Windows and the FT232H only: install the 'Zadig' tool, and replace
 the existing driver with `libusb-win32` (see the pyftdi documentation).
+- For Linux and the MCP2221A only: follow the instructions on 
+<https://learn.adafruit.com/circuitpython-libraries-on-any-computer-with-mcp2221/linux>
+- Download the codebase
 - Install the tool with `pip install -e .` (the `-e` option installs the
 project in 'editable' mode)
 - Run the tool with `baseband_config [options]`
