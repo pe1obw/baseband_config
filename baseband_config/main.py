@@ -7,7 +7,10 @@ more information.
 """
 import argparse
 import json
-import msvcrt
+try:
+    import msvcrt
+except ImportError:
+    pass
 import time
 from baseband.baseband import Baseband
 from baseband.settings import SETTINGS
@@ -88,8 +91,11 @@ def main():
                 field_name = field[0]
                 print(f'{field_name} = {getattr(actuals, field_name)}')
             time.sleep(1)
-            if msvcrt.kbhit():
-                break
+            try:
+                if msvcrt.kbhit():
+                    break
+            except NameError:
+                pass
 
     if args.settings_to_file:
         settings = bb.read_settings()
