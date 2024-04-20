@@ -197,7 +197,9 @@ class Baseband:
             f' BW={NICAM_BANDWIDTH(settings.nicam.bandwidth).name}, input={settings.nicam.input}, ena={settings.nicam.enable}')
         print(f'VIDEO settings: video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name}, '
               f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, '
-              f'input={VIDEO_IN(settings.video.video_in).name}, ena={settings.video.enable}')
+              f'input={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass}, '
+              f'ena={settings.video.enable}')
+        print(f'GENERAL settings: audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}')
 
     def dump_osd_memory(self) -> None:
         """

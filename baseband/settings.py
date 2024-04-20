@@ -72,9 +72,16 @@ class VIDEO_SETTINGS(Structure):
         ("invert_video", c_uint16, 1),
         ("osd_mode", c_uint16, 2),
         ("video_in", c_uint16, 2),
-        ("enable", c_uint16, 1)
+        ("filter_bypass", c_uint16, 1),
+        ("enable", c_uint8, 1)
     ]
 
+class GENERAL_SETTINGS(Structure):
+    _pack_ = 1
+    _fields_ = [
+        ("audio1_extern_ena", c_uint8, 1),
+        ("audio2_extern_ena", c_uint8, 1)
+    ]
 
 class SETTINGS(Structure):
     _pack_ = 1
@@ -82,5 +89,6 @@ class SETTINGS(Structure):
         ("name", c_char*12),
         ("fm", FM_SETTINGS*4),
         ("nicam", NICAM_SETTINGS),
-        ("video", VIDEO_SETTINGS)
+        ("video", VIDEO_SETTINGS),
+        ("general", GENERAL_SETTINGS)
     ]

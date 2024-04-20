@@ -71,6 +71,11 @@ def main():
           f'FPGA version:       {info["fpga_version"]}\n'
           f'Software version:   {info["sw_version"]}{" (bootloader, no image!)" if info["sw_version"] == "0.0" else ""}')
 
+    major, minor = info['sw_version'].split('.')
+    if not (int(major) >= 1 or int(minor) >= 27):
+        print('Baseband Firmware version 0.27 or higher required')
+        exit(0)
+
     if args.info:
         print('\nActual settings:')
         settings = bb.read_settings()
