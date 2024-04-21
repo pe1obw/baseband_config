@@ -50,6 +50,9 @@ class Baseband:
     """
     This class is responsible for providing methods to control the Baseband.
     """
+    OSD_WIDTH = 40
+    OSD_HEIGHT = 16
+
     def __init__(self, usb_driver):
         self._slave = usb_driver
 
@@ -196,28 +199,72 @@ class Baseband:
         print(f'NICAM settings: {settings.nicam.rf_frequency_khz} kHz, level={settings.nicam.rf_level},'
             f' BW={NICAM_BANDWIDTH(settings.nicam.bandwidth).name}, input={settings.nicam.input}, ena={settings.nicam.enable}')
         print(f'VIDEO settings: video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name}, '
-              f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, '
+              f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, show_menu={settings.video.show_menu}, '
               f'input={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass}, '
               f'ena={settings.video.enable}')
         print(f'GENERAL settings: audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}')
+
+    def _handle_invert(self, str_in: str) -> str:
+        """
+        Handle invert command in OSD contents.
+        Character values between \\i and \\u are inverted, i.e., 0x80 is added to the ASCII values.
+        """
+        start : int = 0
+        out: str = str_in
+        while True:
+            start = str_in.find('\\i', start)
+            if start == -1:
+                break
+            out = str_in[:start]
+            start += 2  # Move to the character after the found substring
+            end = str_in.find('\\u', start)
+            if end == -1:
+                end = len(str_in)
+            # Invert the substring by adding 0x80 to the ASCII value of each character
+            for c in str_in[start:end]:
+                out += chr(ord(c) + 128)
+            end += 2  # Move to the character after the found substring
+            out += str_in[end:]
+            start = end
+        return out
+
+    def write_osd(self, osd_contents: str) -> None:
+        """
+        Write to OSD.
+        Replace substrings "\n" and "\0" with the actual line break and null character,
+        truncate or pad with null characters to fit the 40x16 OSD memory.
+        """
+        osd_contents = osd_contents.replace('\\n', '\n').replace('\\0', '\0')
+        for y, str in enumerate(osd_contents.split('\n')[:self.OSD_HEIGHT]):
+            str = self._handle_invert(str)
+            if len(str) > self.OSD_WIDTH:
+                str = str[:self.OSD_WIDTH]
+            else:
+                str += '\0' * (self.OSD_WIDTH - len(str))
+            osd_contents = osd_contents[:y * self.OSD_WIDTH] + str + osd_contents[(y + 1) * self.OSD_WIDTH:]
+        self._slave.write(I2C_ACCESS_DISPLAY + bytes([ord(c) for c in osd_contents]))
+
+    def clear_osd(self) -> None:
+        """
+        Clear OSD
+        """
+        contents = '\0' * self.OSD_WIDTH * self.OSD_HEIGHT
+        self.write_osd(contents)
 
     def dump_osd_memory(self) -> None:
         """
         Read & print actual OSD contents
         """
-        WIDTH = 40
-        HEIGHT = 16
-        result = self._slave.exchange(I2C_ACCESS_DISPLAY, WIDTH * HEIGHT)
-        for y in range(0, HEIGHT):
-            for x in range(0, WIDTH):
-                print (f'{result[x + WIDTH * y]:02X}', end=' ')
+        result = self._slave.exchange(I2C_ACCESS_DISPLAY, self.OSD_WIDTH * self.OSD_HEIGHT)
+        for y in range(0, self.OSD_HEIGHT):
+            for x in range(0, self.OSD_WIDTH):
+                print (f'{result[x + self.OSD_WIDTH * y]:02X}', end=' ')
             print('  [', end='')
-            for x in range(0, WIDTH):
-                i = x + WIDTH * y
+            for x in range(0, self.OSD_WIDTH):
+                i = x + self.OSD_WIDTH * y
                 char = result[i] if result[i] >= 32 and result[i] < 127 else 32
                 print (f'{chr(char)}', end='')
             print(']')
-
 
     def flash_firmware(self, firmware: bytes) -> None:
         """

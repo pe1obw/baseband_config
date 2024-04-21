@@ -16,14 +16,14 @@ the firmware and more.
 
 Interfaces based on two different chips are supported.
 
-### FTDI FT232H 
+### FTDI FT232H
 
 The FTDI chips do not support clock stretching. This limits the speed to
 50 kHz and makes the tool unusable for some flash access commands
-(although firmware upgrading works). The FT232H is the only supported 
+(although firmware upgrading works). The FT232H is the only supported
 FTDI chip that offers true open drain outputs, but other FTDI devices might
-be used as well, using a workaround (diodes). See 
-<https://eblot.github.io/pyftdi/installation.html> for more information. 
+be used as well, using a workaround (diodes). See
+<https://eblot.github.io/pyftdi/installation.html> for more information.
 
 ### Microchip MCP2221
 
@@ -33,9 +33,9 @@ by terminating the program while reading the flash contents, after that SDA
 stayed low and the interface needed to be reset. This problem might be fixed
 in the future...
 
-The software supports two MCP2221 Python drivers: EasyMCP2221 and PyMCP2221A. 
+The software supports two MCP2221 Python drivers: EasyMCP2221 and PyMCP2221A.
 EasyMCP2221A works well with the latest version (1.7.2). On my machines, it
-operates reliable at 400 kHz. Overall speed is limited by the USB turnaround 
+operates reliable at 400 kHz. Overall speed is limited by the USB turnaround
 times, this is common for all chips/drivers.
 
 The PyMCP2221A driver shows multiple issues. It works, somewhat, but it is not
@@ -77,11 +77,11 @@ with SCL and SDA. Leave the +5V on the Baseband unconnected!
 Then install the software:
 
 - Install drivers (if applicable)
-    - For the FT232H: follow the instructions on 
-<https://eblot.github.io/pyftdi/installation.html>. For Windows, you have to 
+    - For the FT232H: follow the instructions on
+<https://eblot.github.io/pyftdi/installation.html>. For Windows, you have to
 install the 'Zadig' tool, and replace the existing driver with `libusb-win32`.
     - For the MCP2221A: under Windows, it worked out of the box for me. For Linux,
-follow the instructions on 
+follow the instructions on
 <https://learn.adafruit.com/circuitpython-libraries-on-any-computer-with-mcp2221/linux>
 - Download the codebase
 - Install the tool with `pip install -e .` (the `-e` option installs the
@@ -133,13 +133,24 @@ baseband_config --usb_ftdi --set video.video_mode=PAL
 baseband_config --usb_ftdi --set "name=23cm TX"
 ```
 
-See the `settings.py` file for the possible fields in the settings string.
-
+See the `settings.py` file for all possible fields in the settings string.
 To store the actual settings to preset 10:
 
 ```bash
 baseband_config --usb_ftdi --store_preset=10
 ```
+
+To enable the on screen display (overlay), turn off the menu and show some text:
+
+```bash
+baseband_config --usb_ftdi --set video.osd_mode=OSD_ON
+baseband_config --usb_ftdi --set video.show_menu=0
+baseband_config --usb_ftdi --clear_osd
+baseband_config --usb_ftdi --write_osd "Hello\nYou can \iinvert\u text\0\0\0\0\0\0\0\0\0\0End of line"
+```
+
+A '\0' inserts a 'transparent' space, a '\n' is a line feed and with '\i' and
+'\u' you can switch between inverted and normal text. Screen size is 40 x 16.
 
 Screenshot:
 ![alt text](screenshot.png)

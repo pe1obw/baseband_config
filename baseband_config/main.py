@@ -41,6 +41,8 @@ def main():
     parser.add_argument('--settings_to_file', type=str, help='Store actual settings to file')
     parser.add_argument('--settings_from_file', type=str, help='Read settings from file and write to baseband')
     parser.add_argument('--dump_osd', action='store_true', help='Dump OSD memory')
+    parser.add_argument('--write_osd', type=str, help='Write to OSD')
+    parser.add_argument('--clear_osd', action='store_true', help='Clear OSD memory')
     parser.add_argument('--upgrade', type=str, help='Upgrade baseband firmware')
     parser.add_argument('--download_firmware', type=str, help='Download firmware from baseband')
     parser.add_argument('--pulse_gpio', type=int, help=f'Pulse GPIO pin <n> for {GPIO_PULSE_LENGTH} seconds')
@@ -121,6 +123,13 @@ def main():
     if args.dump_osd:
         print('OSD memory contents:')
         bb.dump_osd_memory()
+
+    if args.write_osd:
+        bb.write_osd(args.write_osd)
+
+    if args.clear_osd:
+        bb.clear_osd()
+        print('OSD memory cleared')
 
     if args.upgrade:
         with open(args.upgrade, 'rb') as file:

@@ -73,6 +73,7 @@ class VIDEO_SETTINGS(Structure):
         ("osd_mode", c_uint16, 2),
         ("video_in", c_uint16, 2),
         ("filter_bypass", c_uint16, 1),
+        ("show_menu", c_uint8, 1),
         ("enable", c_uint8, 1)
     ]
 
