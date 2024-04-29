@@ -162,8 +162,8 @@ baseband_config --usb_ftdi --set general.morse_message_repeat_time=300 --set gen
 baseband_config --usb_ftdi --set general.morse_message="PE1MUD"
 ```
 
-Note: the nco frequency is <value> * 1024/1000 Hz, level is <level> * -6dB,
-and morse_speed is 30/15/10/7.5 words/minute for speed=0/1/2/3.
+Note: the nco frequency is `audio_nco_frequency` * (1000/1024) Hz, level is `generator_level` * -6dB,
+and morse speed is 30/15/10/7.5 words/minute for `morse_speed` = 0/1/2/3.
 
 Screenshot:
 ![alt text](screenshot.png)
