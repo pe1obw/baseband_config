@@ -37,7 +37,7 @@ def main():
 
     # Baseband commands
     parser.add_argument('--info', action='store_true', help='Read device info')
-    parser.add_argument('--set', type=str, help='Set a setting (e.g. --set video.video_mode=PAL')
+    parser.add_argument('--set', action='append', type=str, help='Set a setting (e.g. --set video.video_mode=PAL')
     parser.add_argument('--settings_to_file', type=str, help='Store actual settings to file')
     parser.add_argument('--settings_from_file', type=str, help='Read settings from file and write to baseband')
     parser.add_argument('--dump_osd', action='store_true', help='Dump OSD memory')
@@ -135,6 +135,7 @@ def main():
         with open(args.upgrade, 'rb') as file:
             firmware_data = file.read()
         bb.flash_firmware(firmware_data)
+
     if args.download_firmware:
         assert args.usb_easymcp, 'Firmware download is only supported with EasyMCP2221'
         firmware_data = bb.read_firmware()
@@ -170,9 +171,11 @@ def main():
         bb.erase_preset(args.erase_preset)
         print(f'Preset {args.erase_preset} erased')
 
-    if args.set:
-        setting, value = args.set.split('=')
-        bb.set_setting(setting, value)
+    if args.set is not None:
+        for setting in args.set:
+            setting, value = setting.split('=')
+            bb.set_setting(setting, value)
+        bb.dump_settings(bb.read_settings())
 
 if __name__ == '__main__':
     main()

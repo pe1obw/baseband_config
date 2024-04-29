@@ -159,7 +159,6 @@ class Baseband:
                     break
             if not found:
                 raise ValueError(f'Invalid setting name {setting_name}, field {path} not found in {[field[0] for field in current._fields_]}')
-        self.dump_settings(settings)
         self.write_settings(settings)
 
     def reboot(self) -> None:
