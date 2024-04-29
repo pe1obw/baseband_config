@@ -143,14 +143,27 @@ baseband_config --usb_ftdi --store_preset=10
 To enable the on screen display (overlay), turn off the menu and show some text:
 
 ```bash
-baseband_config --usb_ftdi --set video.osd_mode=OSD_ON
-baseband_config --usb_ftdi --set video.show_menu=0
+baseband_config --usb_ftdi --set video.osd_mode=OSD_ON --set video.show_menu=0
 baseband_config --usb_ftdi --clear_osd
 baseband_config --usb_ftdi --write_osd "Hello\nYou can \iinvert\u text\0\0\0\0\0\0\0\0\0\0End of line"
 ```
 
 A '\0' inserts a 'transparent' space, a '\n' is a line feed and with '\i' and
 '\u' you can switch between inverted and normal text. Screen size is 40 x 16.
+
+To send out your call in morse, with 15 words per minute, every 5 minutes on FM 1 and 2,
+with a 500 Hz tone at -12 dB:
+
+```bash
+baseband_config --usb_ftdi --set fm.0.generator_ena=1 --set fm.0.generator_level=2
+baseband_config --usb_ftdi --set fm.1.generator_ena=1 --set fm.1.generator_level=2
+baseband_config --usb_ftdi --set general.audio_nco_mode=NCO_MORSE --set general.audio_nco_frequency=512
+baseband_config --usb_ftdi --set general.morse_message_repeat_time=300 --set general.morse_speed=1
+baseband_config --usb_ftdi --set general.morse_message="PE1MUD"
+```
+
+Note: the nco frequency is <value> * 1024/1000 Hz, level is <level> * -6dB,
+and morse_speed is 30/15/10/7.5 words/minute for speed=0/1/2/3.
 
 Screenshot:
 ![alt text](screenshot.png)
