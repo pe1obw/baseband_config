@@ -40,6 +40,10 @@ class NICAM_BANDWIDTH(Enum):
     BW_700, BW_500 = range(2)
 
 
+class AUDIO_NCO_MODE(Enum):
+    NCO_CW, NCO_MORSE = range(2)
+
+
 class FM_SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
@@ -47,7 +51,9 @@ class FM_SETTINGS(Structure):
         ("rf_level", c_uint16),
         ("input", c_uint16, 3),
         ("preemphasis", c_uint16, 2),
-        ("bandwidth", c_uint16, 3),
+        ("fm_bandwidth", c_uint16, 3),
+        ("generator_ena", c_uint16, 1),
+        ("generator_level", c_uint16, 4),
         ("am", c_uint16, 1),
         ("enable", c_uint16, 1)
     ]
@@ -58,8 +64,7 @@ class NICAM_SETTINGS(Structure):
     _fields_ = [
         ("rf_frequency_khz", c_uint16),
         ("rf_level", c_uint16),
-        ("bandwidth", c_uint8, 1),
-        ("input", c_uint8, 3),
+        ("nicam_bandwidth", c_uint8, 1),
         ("enable", c_uint8, 1)
     ]
 
@@ -77,12 +82,19 @@ class VIDEO_SETTINGS(Structure):
         ("enable", c_uint8, 1)
     ]
 
+
 class GENERAL_SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
-        ("audio1_extern_ena", c_uint8, 1),
-        ("audio2_extern_ena", c_uint8, 1)
+        ("morse_message", c_char*16),
+        ("audio_nco_frequency", c_uint16),
+        ("audio_nco_mode", c_uint16, 2),
+        ("morse_speed", c_uint16, 2),
+        ("morse_message_repeat_time", c_uint16, 10),
+        ("audio1_extern_ena", c_uint16, 1),
+        ("audio2_extern_ena", c_uint16, 1)
     ]
+
 
 class SETTINGS(Structure):
     _pack_ = 1

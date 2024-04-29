@@ -10,7 +10,7 @@ from typing import Any, Optional
 from baseband.actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
 from baseband.info import INFO
-from baseband.settings import AUDIO_INPUT, FM_BANDWIDTH, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
+from baseband.settings import AUDIO_INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 
 I2C_ACCESS_DISPLAY = bytearray([0x00, 0x00])  # R/W, maps to display memory, 40 columns x 16 rows = 640 bytes
 I2C_ACCESS_FONT_MEMORY = bytearray([0x08, 0x00])  # R/W, maps to font memory, 128 characters, each 8x16 pixels = 2048 bytes
@@ -30,7 +30,7 @@ I2C_ACCESS_COMMAND_VIEW_PRESET = bytearray([0x30, 0x04])  # <preset nr> Read con
 I2C_ACCESS_COMMAND_REBOOT = bytearray([0x30, 0x05])  # <1> Reboot FPGA board after 500ms delay
 
 # Helper to convert enums to strings and vice versa. The enum classes have the same name as fields in the SETTINGS struct.
-SETTINGS_ENUMS = [VIDEO_MODE, VIDEO_IN, OSD_MODE, FM_BANDWIDTH, AUDIO_INPUT, PREEMPHASIS, NICAM_BANDWIDTH]
+SETTINGS_ENUMS = [VIDEO_MODE, VIDEO_IN, OSD_MODE, FM_BANDWIDTH, AUDIO_INPUT, PREEMPHASIS, NICAM_BANDWIDTH, AUDIO_NCO_MODE]
 
 
 def enumstring_to_int(field_name: str, value: str) -> Any:
@@ -188,20 +188,25 @@ class Baseband:
         print(f'Setting name: {settings.name.decode()}')
         print(f'FM settings:')
         for i in range(0, 4):
-            print(f'  {i+1}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
+            print(f'  {i}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
                 f' rf_level={settings.fm[i].rf_level},'
                 f' input={AUDIO_INPUT(settings.fm[i].input).name},'
+                f' generator_ena={settings.fm[i].generator_ena},'
+                f' generator_level={settings.fm[i].generator_level},'
                 f' preemphasis={PREEMPHASIS(settings.fm[i].preemphasis).name},'
-                f' bw={FM_BANDWIDTH(settings.fm[i].bandwidth).name},', end='')
+                f' fm_bandwidth={FM_BANDWIDTH(settings.fm[i].fm_bandwidth).name},', end='')
             print(f' am={settings.fm[i].am},' if i < 2 else '      ', end='')   # Only the first two can do AM
             print(f' enable={settings.fm[i].enable}')
-        print(f'NICAM settings: {settings.nicam.rf_frequency_khz} kHz, level={settings.nicam.rf_level},'
-            f' BW={NICAM_BANDWIDTH(settings.nicam.bandwidth).name}, input={settings.nicam.input}, ena={settings.nicam.enable}')
+        print(f'NICAM settings: rf_frequency_khz={settings.nicam.rf_frequency_khz}, rf_level={settings.nicam.rf_level},'
+            f' nicam_bandwidth={NICAM_BANDWIDTH(settings.nicam.nicam_bandwidth).name}, enable={settings.nicam.enable}')
         print(f'VIDEO settings: video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name}, '
               f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, show_menu={settings.video.show_menu}, '
               f'input={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass}, '
               f'ena={settings.video.enable}')
-        print(f'GENERAL settings: audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}')
+        print(f'GENERAL settings: morse_message "{settings.general.morse_message.decode()}", audio_nco_frequency={settings.general.audio_nco_frequency}, '
+              f'morse_speed={settings.general.morse_speed}, morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
+              f'    audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name}, '
+              f'audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}')
 
     def _handle_invert(self, str_in: str) -> str:
         """
