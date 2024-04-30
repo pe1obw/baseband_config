@@ -185,7 +185,7 @@ class Baseband:
         """
         Print the settings to the console
         """
-        print(f'Setting name: {settings.name.decode()}')
+        print(f'Name: {settings.name.decode()}')
         print(f'FM settings:')
         for i in range(0, 4):
             print(f'  {i}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
@@ -203,10 +203,12 @@ class Baseband:
               f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, show_menu={settings.video.show_menu}, '
               f'input={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass}, '
               f'ena={settings.video.enable}')
-        print(f'GENERAL settings: morse_message "{settings.general.morse_message.decode()}", audio_nco_frequency={settings.general.audio_nco_frequency}, '
-              f'morse_speed={settings.general.morse_speed}, morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
-              f'    audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name}, '
-              f'audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}')
+        print(f'GENERAL settings:\n'
+              f'  audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}, '
+              f'audio_nco_frequency={settings.general.audio_nco_frequency}, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},\n'
+              f'  morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed}, '
+              f'morse_message_repeat_time={settings.general.morse_message_repeat_time}'
+)
 
     def _handle_invert(self, str_in: str) -> str:
         """
