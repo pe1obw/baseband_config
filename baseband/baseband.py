@@ -125,12 +125,11 @@ class Baseband:
         assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_ERASE_PRESET, preset_nr)
 
-    def set_setting(self, setting_name: str, value: str) -> None:
+    def set_using_name_value(self, settings: SETTINGS, setting_name: str, value: str) -> None:
         """
-        Set a setting
+        Set a value by dot-separated setting name
         """
-        # get current settings
-        current = settings = self.read_settings()
+        current = settings
 
         # convert dot-separated setting name to a path of field names
         # and try to find corresponding fields in the settings struct.
@@ -159,7 +158,6 @@ class Baseband:
                     break
             if not found:
                 raise ValueError(f'Invalid setting name {setting_name}, field {path} not found in {[field[0] for field in current._fields_]}')
-        self.write_settings(settings)
 
     def reboot(self) -> None:
         """

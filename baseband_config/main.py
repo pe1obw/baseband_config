@@ -173,10 +173,12 @@ def main():
         print(f'Preset {args.erase_preset} erased')
 
     if args.set is not None:
+        settings = bb.read_settings()
         for setting in args.set:
-            setting, value = setting.split('=')
-            bb.set_setting(setting, value)
-        bb.dump_settings(bb.read_settings())
+            param, value = setting.split('=')
+            bb.set_using_name_value(settings, param, value)
+        bb.dump_settings(settings)
+        bb.write_settings(settings)
 
 if __name__ == '__main__':
     main()
