@@ -73,6 +73,22 @@ def main():
           f'FPGA version:       {info["fpga_version"]}\n'
           f'Software version:   {info["sw_version"]}{" (bootloader, no image!)" if info["sw_version"] == "0.0" else ""}')
 
+    if args.upgrade:
+        with open(args.upgrade, 'rb') as file:
+            firmware_data = file.read()
+        bb.flash_firmware(firmware_data)
+
+    if args.download_firmware:
+        assert args.usb_easymcp, 'Firmware download is only supported with EasyMCP2221'
+        firmware_data = bb.read_firmware()
+        with open(args.download_firmware, 'wb') as file:
+            file.write(firmware_data)
+        print(f'Firmware downloaded to {args.download_firmware}')
+
+    if args.reboot:
+        bb.reboot()
+
+    # Check if the baseband firmware version supports this version of the utility
     major, minor = info['sw_version'].split('.')
     if not (int(major) >= 1 or int(minor) >= 27):
         print('Baseband Firmware version 0.27 or higher required')
@@ -131,21 +147,6 @@ def main():
         bb.clear_osd()
         print('OSD memory cleared')
 
-    if args.upgrade:
-        with open(args.upgrade, 'rb') as file:
-            firmware_data = file.read()
-        bb.flash_firmware(firmware_data)
-
-    if args.download_firmware:
-        assert args.usb_easymcp, 'Firmware download is only supported with EasyMCP2221'
-        firmware_data = bb.read_firmware()
-        with open(args.download_firmware, 'wb') as file:
-            file.write(firmware_data)
-        print(f'Firmware downloaded to {args.download_firmware}')
-
-    if args.reboot:
-        bb.reboot()
-
     if args.show_presets:
         preset_flags = bb.load_preset_status()
         for i, flag in enumerate(preset_flags):
@@ -172,10 +173,12 @@ def main():
         print(f'Preset {args.erase_preset} erased')
 
     if args.set is not None:
+        settings = bb.read_settings()
         for setting in args.set:
-            setting, value = setting.split('=')
-            bb.set_setting(setting, value)
-        bb.dump_settings(bb.read_settings())
+            param, value = setting.split('=')
+            bb.set_using_name_value(settings, param, value)
+        bb.dump_settings(settings)
+        bb.write_settings(settings)
 
 if __name__ == '__main__':
     main()

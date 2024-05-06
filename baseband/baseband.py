@@ -125,12 +125,11 @@ class Baseband:
         assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_ERASE_PRESET, preset_nr)
 
-    def set_setting(self, setting_name: str, value: str) -> None:
+    def set_using_name_value(self, settings: SETTINGS, setting_name: str, value: str) -> None:
         """
-        Set a setting
+        Set a value by dot-separated setting name
         """
-        # get current settings
-        current = settings = self.read_settings()
+        current = settings
 
         # convert dot-separated setting name to a path of field names
         # and try to find corresponding fields in the settings struct.
@@ -159,7 +158,6 @@ class Baseband:
                     break
             if not found:
                 raise ValueError(f'Invalid setting name {setting_name}, field {path} not found in {[field[0] for field in current._fields_]}')
-        self.write_settings(settings)
 
     def reboot(self) -> None:
         """
@@ -185,7 +183,7 @@ class Baseband:
         """
         Print the settings to the console
         """
-        print(f'Setting name: {settings.name.decode()}')
+        print(f'Name: {settings.name.decode()}')
         print(f'FM settings:')
         for i in range(0, 4):
             print(f'  {i}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
@@ -203,10 +201,12 @@ class Baseband:
               f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, show_menu={settings.video.show_menu}, '
               f'input={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass}, '
               f'ena={settings.video.enable}')
-        print(f'GENERAL settings: morse_message "{settings.general.morse_message.decode()}", audio_nco_frequency={settings.general.audio_nco_frequency}, '
-              f'morse_speed={settings.general.morse_speed}, morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
-              f'    audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name}, '
-              f'audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}')
+        print(f'GENERAL settings:\n'
+              f'  audio1_extern_ena={settings.general.audio1_extern_ena}, audio2_extern_ena={settings.general.audio2_extern_ena}, '
+              f'audio_nco_frequency={settings.general.audio_nco_frequency}, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},\n'
+              f'  morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed}, '
+              f'morse_message_repeat_time={settings.general.morse_message_repeat_time}'
+)
 
     def _handle_invert(self, str_in: str) -> str:
         """
