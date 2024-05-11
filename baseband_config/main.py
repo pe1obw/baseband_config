@@ -90,8 +90,8 @@ def main():
 
     # Check if the baseband firmware version supports this version of the utility
     major, minor = info['sw_version'].split('.')
-    if not (int(major) >= 1 or int(minor) >= 27):
-        print('Baseband Firmware version 0.27 or higher required')
+    if not (int(major) > 0 or int(minor) >= 28):
+        print('Baseband Firmware version 0.28 or higher required')
         exit(0)
 
     if args.info:

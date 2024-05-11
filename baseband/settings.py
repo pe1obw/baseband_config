@@ -28,8 +28,16 @@ class FM_BANDWIDTH(Enum):
     BW_130, BW_180, BW_230, BW_280 = range(4)
 
 
-class AUDIO_INPUT(Enum):
-    IN1L, IN1R, IN2L, IN2R, IN1LR, IN2LR = range(6)
+class INPUT(Enum):
+    ADC1L, ADC1R, ADC2L, ADC2R, I2S1L, I2S1R, I2S2L, I2S2R, ADC1LR, ADC2LR, I2S1LR, I2S2LR, MUTE = range(13)
+
+
+class INPUT_CH1(Enum):
+    ADC1L, ADC1R, ADC2L, ADC2R, I2S1L, I2S1R, I2S2L, I2S2R, ADC1LR, ADC2LR, I2S1LR, I2S2LR, MUTE = range(13)
+
+
+class INPUT_CH2(Enum):
+    ADC1L, ADC1R, ADC2L, ADC2R, I2S1L, I2S1R, I2S2L, I2S2R, ADC1LR, ADC2LR, I2S1LR, I2S2LR, MUTE = range(13)
 
 
 class PREEMPHASIS(Enum):
@@ -49,7 +57,7 @@ class FM_SETTINGS(Structure):
     _fields_ = [
         ("rf_frequency_khz", c_uint16),
         ("rf_level", c_uint16),
-        ("input", c_uint16, 3),
+        ("input", c_uint16, 4),
         ("preemphasis", c_uint16, 2),
         ("fm_bandwidth", c_uint16, 3),
         ("generator_ena", c_uint16, 1),
@@ -58,12 +66,17 @@ class FM_SETTINGS(Structure):
         ("enable", c_uint16, 1)
     ]
 
-
 class NICAM_SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
         ("rf_frequency_khz", c_uint16),
         ("rf_level", c_uint16),
+        ("input_ch1", c_uint8, 4),
+        ("input_ch2", c_uint8, 4),
+        ("generator_level_ch1", c_uint8, 4),
+        ("generator_level_ch2", c_uint8, 4),
+        ("generator_ena_ch1", c_uint8, 1),
+        ("generator_ena_ch2", c_uint8, 1),
         ("nicam_bandwidth", c_uint8, 1),
         ("enable", c_uint8, 1)
     ]
@@ -90,9 +103,7 @@ class GENERAL_SETTINGS(Structure):
         ("audio_nco_frequency", c_uint16),
         ("audio_nco_mode", c_uint16, 2),
         ("morse_speed", c_uint16, 2),
-        ("morse_message_repeat_time", c_uint16, 10),
-        ("audio1_extern_ena", c_uint16, 1),
-        ("audio2_extern_ena", c_uint16, 1)
+        ("morse_message_repeat_time", c_uint16, 10)
     ]
 
 
