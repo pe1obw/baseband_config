@@ -77,10 +77,10 @@ with SCL and SDA. Leave the +5V on the Baseband unconnected!
 Then install the software:
 
 - Install drivers (if applicable)
-    - For the FT232H: follow the instructions on
+  - For the FT232H: follow the instructions on
 <https://eblot.github.io/pyftdi/installation.html>. For Windows, you have to
 install the 'Zadig' tool, and replace the existing driver with `libusb-win32`.
-    - For the MCP2221A: under Windows, it worked out of the box for me. For Linux,
+  - For the MCP2221A: under Windows, it worked out of the box for me. For Linux,
 follow the instructions on
 <https://learn.adafruit.com/circuitpython-libraries-on-any-computer-with-mcp2221/linux>
 - Download the codebase
