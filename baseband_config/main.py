@@ -52,6 +52,7 @@ def main():
     parser.add_argument('--store_preset', type=int, help='Store actual settings to preset <n> (1..31)')
     parser.add_argument('--erase_preset', type=int, help='Erase preset <n> (1..31)')
     parser.add_argument('--show_presets', action='store_true', help='Show all used presets')
+    parser.add_argument('--set_default', action='store_true', help='Set actual settings to default')
     args = parser.parse_args()
 
     if args.usb_mcp2221:
@@ -179,6 +180,11 @@ def main():
             bb.set_using_name_value(settings, param, value)
         bb.dump_settings(settings)
         bb.write_settings(settings)
+
+    if args.set_default:
+        bb.set_default()
+        bb.dump_settings(bb.read_settings())
+        print('Default settings loaded')
 
 if __name__ == '__main__':
     main()

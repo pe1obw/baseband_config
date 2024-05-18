@@ -28,6 +28,7 @@ I2C_ACCESS_COMMAND_STORE_PRESET = bytearray([0x30, 0x02])  # <preset nr> Store c
 I2C_ACCESS_COMMAND_ERASE_PRESET = bytearray([0x30, 0x03])  # <preset nr> Erase current config in preset 1..31
 I2C_ACCESS_COMMAND_VIEW_PRESET = bytearray([0x30, 0x04])  # <preset nr> Read config from preset 1..31 and copy to 'preview' settings
 I2C_ACCESS_COMMAND_REBOOT = bytearray([0x30, 0x05])  # <1> Reboot FPGA board after 500ms delay
+I2C_ACCESS_COMMAND_SET_DEFAULT = bytearray([0x30, 0x06])  # <1> Set actual settings to default
 
 # Helper to convert enums to strings and vice versa. The enum classes have the same name as fields in the SETTINGS struct.
 SETTINGS_ENUMS = [VIDEO_MODE, VIDEO_IN, OSD_MODE, FM_BANDWIDTH, INPUT, INPUT_CH1, INPUT_CH2, PREEMPHASIS, NICAM_BANDWIDTH, AUDIO_NCO_MODE]
@@ -125,6 +126,12 @@ class Baseband:
         assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_ERASE_PRESET, preset_nr)
 
+    def set_default(self) -> None:
+        """
+        Set actual settings to default
+        """
+        self._send_command(I2C_ACCESS_COMMAND_SET_DEFAULT)
+
     def set_using_name_value(self, settings: SETTINGS, setting_name: str, value: str) -> None:
         """
         Set a value by dot-separated setting name
@@ -174,7 +181,7 @@ class Baseband:
         result = self._slave.exchange(command + bytearray([param]), 1)
         timeeout = POLL_TIMEOUT
         while not result[0] == 0x00 and timeeout > 0:
-            result = self._slave.exchange(I2C_ACCESS_COMMAND_UPDATE_SETTINGS, 1)
+            result = self._slave.exchange(command, 1)
             time.sleep(POLL_REPEAT_INTERVAL)
             timeeout -= POLL_REPEAT_INTERVAL
 
