@@ -191,6 +191,17 @@ class Baseband:
         Print the settings to the console
         """
         print(f'Name: {settings.name.decode()}')
+        print(f'VIDEO settings:\n'
+              f'  video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name},'
+              f' invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, show_menu={settings.video.show_menu},'
+              f' video_in={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass},'
+              f' enable={settings.video.enable}')
+        print(f'NICAM settings:\n'
+              f'  input_ch1={INPUT(settings.nicam.input_ch1).name}, input_ch2={INPUT(settings.nicam.input_ch2).name},'
+              f' generator_level_ch1={settings.nicam.generator_level_ch1}, generator_level_ch2={settings.nicam.generator_level_ch2},'
+              f' generator_ena_ch1={settings.nicam.generator_ena_ch1}, generator_ena_ch2={settings.nicam.generator_ena_ch2},\n'
+              f'  rf_frequency_khz={settings.nicam.rf_frequency_khz} kHz, rf_level={settings.nicam.rf_level},'
+              f' nicam_bandwidth={NICAM_BANDWIDTH(settings.nicam.nicam_bandwidth).name}, enable={settings.nicam.enable}')
         print(f'FM settings:')
         for i in range(0, 4):
             print(f'  {i}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
@@ -202,20 +213,10 @@ class Baseband:
                 f' fm_bandwidth={FM_BANDWIDTH(settings.fm[i].fm_bandwidth).name},', end='')
             print(f' am={settings.fm[i].am},' if i < 2 else '      ', end='')   # Only the first two can do AM
             print(f' enable={settings.fm[i].enable}')
-        print(f'NICAM settings:\n'
-              f'  input_ch1={INPUT(settings.nicam.input_ch1).name}, input_ch2={INPUT(settings.nicam.input_ch2).name},'
-              f' generator_level_ch1={settings.nicam.generator_level_ch1}, generator_level_ch2={settings.nicam.generator_level_ch2},'
-              f' generator_ena_ch1={settings.nicam.generator_ena_ch1}, generator_ena_ch2={settings.nicam.generator_ena_ch2},\n'
-              f'  rf_frequency_khz={settings.nicam.rf_frequency_khz}, rf_level={settings.nicam.rf_level},'
-              f' nicam_bandwidth={NICAM_BANDWIDTH(settings.nicam.nicam_bandwidth).name}, enable={settings.nicam.enable}')
-        print(f'VIDEO settings: video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name}, '
-              f'invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, show_menu={settings.video.show_menu}, '
-              f'video_in={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass}, '
-              f'enable={settings.video.enable}')
         print(f'GENERAL settings:\n'
-              f'  audio_nco_frequency={settings.general.audio_nco_frequency}, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},\n'
-              f'  morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed}, '
-              f'morse_message_repeat_time={settings.general.morse_message_repeat_time}'
+              f'  audio_nco_frequency={settings.general.audio_nco_frequency} Hz, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},'
+              f' morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed},'
+              f' morse_message_repeat_time={settings.general.morse_message_repeat_time}'
 )
 
     def _handle_invert(self, str_in: str) -> str:
