@@ -170,9 +170,9 @@ class Baseband:
         """
         Reboot the Baseband
         """
-        self._send_command(I2C_ACCESS_COMMAND_REBOOT)
+        self._send_command(I2C_ACCESS_COMMAND_REBOOT, nowait=True)
 
-    def _send_command(self, command: int, param: int = 1) -> None:
+    def _send_command(self, command: int, param: int = 1, nowait: bool = False) -> None:
         """
         Send a command to the baseband and wait until it's executed
         """
@@ -180,7 +180,7 @@ class Baseband:
         POLL_REPEAT_INTERVAL = 0.01
         result = self._slave.exchange(command + bytearray([param]), 1)
         timeeout = POLL_TIMEOUT
-        while not result[0] == 0x00 and timeeout > 0:
+        while (not nowait) and (not result[0] == 0x00) and timeeout > 0:
             result = self._slave.exchange(command, 1)
             time.sleep(POLL_REPEAT_INTERVAL)
             timeeout -= POLL_REPEAT_INTERVAL
