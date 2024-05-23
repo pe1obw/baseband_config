@@ -216,8 +216,8 @@ class Baseband:
         print(f'GENERAL settings:\n'
               f'  audio_nco_frequency={settings.general.audio_nco_frequency} Hz, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},'
               f' morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed},'
-              f' morse_message_repeat_time={settings.general.morse_message_repeat_time}'
-)
+              f' morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
+              f'  last_recalled_presetnr={settings.general.last_recalled_presetnr}, user_setting1={settings.general.user_setting1}')
 
     def _handle_invert(self, str_in: str) -> str:
         """
