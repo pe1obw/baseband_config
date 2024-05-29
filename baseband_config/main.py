@@ -22,6 +22,29 @@ from baseband.usb_mcp2221 import UsbMcp2221
 GPIO_PULSE_LENGTH = 3  # Pulse length in seconds
 
 
+def read_pattern_file(filename):
+    '''
+    Read pattern memory from file
+    format is <addr>: <data> ... <data> (20 bytes)
+    0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    '''
+    buffer = [0] * 8192
+    with open(filename, 'rt') as file:
+        for line in file.readlines():
+            line = line.rstrip('\n').rstrip('\r')
+            # Check format
+            if len(line) < 6 or line[4] != ':':
+                continue
+            # Parse address
+            address = int(line[:4], 16)
+            # Parse data
+            data = line[6:].split()
+            for byte in data:
+                buffer[address] = int(byte, 16)
+                address += 1
+    return buffer
+
+
 def main():
     # Create an argument parser
     parser = argparse.ArgumentParser(description='Baseband Configuration Utility')
@@ -53,6 +76,9 @@ def main():
     parser.add_argument('--erase_preset', type=int, help='Erase preset <n> (1..31)')
     parser.add_argument('--show_presets', action='store_true', help='Show all used presets')
     parser.add_argument('--set_default', action='store_true', help='Set actual settings to default')
+    parser.add_argument('--dump_pattern_memory', action='store_true', help='Read pattern memory')
+    parser.add_argument('--read_pattern_memory', type=str, help='Read pattern memory to file')
+    parser.add_argument('--program_pattern_memory', type=str, help='Program pattern memory from file contents')
     args = parser.parse_args()
 
     if args.usb_mcp2221:
@@ -101,10 +127,10 @@ def main():
         bb.dump_settings(settings)
         print('\nPreset status:')
         preset_flags = bb.load_preset_status()
-        for i, flag in enumerate(preset_flags):
-            if i == 0:
+        for address, flag in enumerate(preset_flags):
+            if address == 0:
                 continue
-            print(f'Preset {i:2}: {bb.get_preset(i).name.decode() if flag else "Empty":14}', end='' if i % 4 else '\n')
+            print(f'Preset {address:2}: {bb.get_preset(address).name.decode() if flag else "Empty":14}', end='' if address % 4 else '\n')
         print()
 
     if args.read_meters:
@@ -150,12 +176,12 @@ def main():
 
     if args.show_presets:
         preset_flags = bb.load_preset_status()
-        for i, flag in enumerate(preset_flags):
-            if i == 0:
+        for address, flag in enumerate(preset_flags):
+            if address == 0:
                 continue
-            print(f'Preset {i}: {"" if flag else "Empty"}')
+            print(f'Preset {address}: {"" if flag else "Empty"}')
             if flag:
-                bb.dump_settings(bb.get_preset(i))
+                bb.dump_settings(bb.get_preset(address))
                 print()
 
     if args.load_preset:
@@ -185,6 +211,31 @@ def main():
         bb.set_default()
         bb.dump_settings(bb.read_settings())
         print('Default settings loaded')
+
+    if args.dump_pattern_memory:
+        buffer = bb.read_pattern_memory()
+        for address, data in enumerate(buffer):
+            if address % 32 == 0:
+                print(f'{address:04x}: ', end='')
+            print(f'{data:02x}', end=' ' if address % 32 != 31 else '\n')
+
+    if args.read_pattern_memory:
+        buffer = bb.read_pattern_memory()
+        with open(args.read_pattern_memory, 'wt') as file:
+            for address, data in enumerate(buffer):
+                if address % 32 == 0:
+                    file.write(f'{address:04x}: ')
+                file.write(f'{data:02x}{" " if address % 32 != 31 else "\n"}')
+
+    if args.program_pattern_memory:
+        buffer = read_pattern_file(args.program_pattern_memory)
+        if buffer:
+            bb.write_pattern_memory(bytes(buffer))
+            print('Pattern memory programmed')
+            for address, data in enumerate(buffer):
+                if address % 32 == 0:
+                    print(f'{address:04x}: ', end='')
+                print(f'{data:02x}', end=' ' if address % 32 != 31 else '\n')
 
 if __name__ == '__main__':
     main()

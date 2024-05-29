@@ -10,7 +10,7 @@ from typing import Any, Optional
 from baseband.actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
 from baseband.info import INFO
-from baseband.settings import INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
+from baseband.settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 
 I2C_ACCESS_DISPLAY = bytearray([0x00, 0x00])  # R/W, maps to display memory, 40 columns x 16 rows = 640 bytes
 I2C_ACCESS_FONT_MEMORY = bytearray([0x08, 0x00])  # R/W, maps to font memory, 128 characters, each 8x16 pixels = 2048 bytes
@@ -21,6 +21,8 @@ I2C_ACCESS_VIEW_SETTINGS = bytearray([0x40, 0x00])  # RO maps to SETTINGS previe
 I2C_ACCESS_READ_PRESET_STATUS = bytearray([0x50, 0x00])  # RO maps to PRESET_FLAGS, 32 bits (4 bytes), bit=1 indicates if a preset is used
 I2C_ACCESS_INFO = bytearray([0x60, 0x00])  # RO	maps to INFO
 I2C_ACCESS_FLASH = bytearray([0x70, 0x00])  # R/W maps to flash SPI interface, see description in file header
+I2C_ACCESS_PATTERN_MEMORY = bytearray([0x80, 0x00])  # R/W, maps to pattern memory (8192 bytes)
+I2C_ACCESS_IO_REGISTERS = bytearray([0xA0, 0x00])  # R/W, maps to IO registers, see description in file header
 
 I2C_ACCESS_COMMAND_UPDATE_SETTINGS = bytearray([0x30, 0x00])  # <1> Update hardware registers (activate settings)
 I2C_ACCESS_COMMAND_READ_PRESET = bytearray([0x30, 0x01])  # <preset nr> Read config from preset 1..31 and activate it
@@ -31,7 +33,7 @@ I2C_ACCESS_COMMAND_REBOOT = bytearray([0x30, 0x05])  # <1> Reboot FPGA board aft
 I2C_ACCESS_COMMAND_SET_DEFAULT = bytearray([0x30, 0x06])  # <1> Set actual settings to default
 
 # Helper to convert enums to strings and vice versa. The enum classes have the same name as fields in the SETTINGS struct.
-SETTINGS_ENUMS = [VIDEO_MODE, VIDEO_IN, OSD_MODE, FM_BANDWIDTH, INPUT, INPUT_CH1, INPUT_CH2, PREEMPHASIS, NICAM_BANDWIDTH, AUDIO_NCO_MODE]
+SETTINGS_ENUMS = [VIDEO_MODE, VIDEO_IN, OSD_MODE, FM_BANDWIDTH, INPUT, INPUT_CH1, INPUT_CH2, PREEMPHASIS, NICAM_BANDWIDTH, AUDIO_NCO_MODE, AUDIO_NCO_WAVEFORM]
 
 
 def enumstring_to_int(field_name: str, value: str) -> Any:
@@ -215,6 +217,7 @@ class Baseband:
             print(f' enable={settings.fm[i].enable}')
         print(f'GENERAL settings:\n'
               f'  audio_nco_frequency={settings.general.audio_nco_frequency} Hz, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},'
+              f' audio_nco_waveform={AUDIO_NCO_WAVEFORM(settings.general.audio_nco_waveform).name},'
               f' morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed},'
               f' morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
               f'  last_recalled_presetnr={settings.general.last_recalled_presetnr}, user_setting1={settings.general.user_setting1}')
@@ -280,6 +283,18 @@ class Baseband:
                 char = result[i] if result[i] >= 32 and result[i] < 127 else 32
                 print (f'{chr(char)}', end='')
             print(']')
+
+    def read_pattern_memory(self) -> bytes:
+        """
+        Read pattern memory
+        """
+        return self._slave.exchange(I2C_ACCESS_PATTERN_MEMORY, 8192)
+
+    def write_pattern_memory(self, pattern: bytes) -> None:
+        """
+        Write pattern memory
+        """
+        self._slave.write(I2C_ACCESS_PATTERN_MEMORY + pattern)
 
     def flash_firmware(self, firmware: bytes) -> None:
         """

@@ -52,6 +52,10 @@ class AUDIO_NCO_MODE(Enum):
     NCO_CW, NCO_MORSE = range(2)
 
 
+class AUDIO_NCO_WAVEFORM(Enum):
+    NCO_SINE, NCO_SQUARE, NCO_NOISE = range(3)
+
+
 class FM_SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
@@ -100,7 +104,8 @@ class GENERAL_SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
         ("morse_message", c_char*16),
-        ("audio_nco_frequency", c_uint16),
+        ("audio_nco_frequency", c_uint16, 14),
+        ("audio_nco_waveform", c_uint16, 2),
         ("audio_nco_mode", c_uint16, 2),
         ("morse_speed", c_uint16, 2),
         ("morse_message_repeat_time", c_uint16, 10),
