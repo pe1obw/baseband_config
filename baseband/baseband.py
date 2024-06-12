@@ -197,7 +197,7 @@ class Baseband:
               f'  video_level={settings.video.video_level}, video_mode={VIDEO_MODE(settings.video.video_mode).name},'
               f' invert_video={settings.video.invert_video}, osd_mode={OSD_MODE(settings.video.osd_mode).name}, show_menu={settings.video.show_menu},'
               f' video_in={VIDEO_IN(settings.video.video_in).name}, filter_bypass={settings.video.filter_bypass},'
-              f' enable={settings.video.enable}')
+              f' pattern_enable={settings.video.pattern_enable} enable={settings.video.enable}')
         print(f'NICAM settings:\n'
               f'  input_ch1={INPUT(settings.nicam.input_ch1).name}, input_ch2={INPUT(settings.nicam.input_ch2).name},'
               f' generator_level_ch1={settings.nicam.generator_level_ch1}, generator_level_ch2={settings.nicam.generator_level_ch2},'
