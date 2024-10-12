@@ -5,7 +5,7 @@ Baseband control class
 """
 import time
 from ctypes import Array, Structure, sizeof
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 from baseband.actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
@@ -47,6 +47,9 @@ def enumstring_to_int(field_name: str, value: str) -> Any:
             except KeyError:
                 raise ValueError(f'Invalid value {value} for {field_name}, must be one of {", ".join([e.name for e in enum])}')
     return int(value)
+
+
+T = TypeVar('T', bound=Structure)
 
 
 class Baseband:
@@ -150,7 +153,7 @@ class Baseband:
                 field_name, field_type = field[0], field[1]
                 if path == field_name:
                     found = True
-                    if issubclass(field_type, Array) and issubclass(field_type._type_, Structure):
+                    if issubclass(field_type, Array) and issubclass(field_type._type_, Structure):  # type: ignore
                         index = int(setting_path.pop(0))  # next element is the index
                         current = getattr(current, field_name)[index]
                     elif issubclass(field_type, Structure):
@@ -174,7 +177,7 @@ class Baseband:
         """
         self._send_command(I2C_ACCESS_COMMAND_REBOOT, nowait=True)
 
-    def _send_command(self, command: int, param: int = 1, nowait: bool = False) -> None:
+    def _send_command(self, command: bytearray, param: int = 1, nowait: bool = False) -> None:
         """
         Send a command to the baseband and wait until it's executed
         """
@@ -331,7 +334,7 @@ class Baseband:
         return serialized_settings
 
     @staticmethod
-    def deserialize(serialized_settings: str, structure: Structure, input: Optional[Structure] = None) -> Structure:
+    def deserialize(serialized_settings: dict, structure: type[T], input: Optional[T] = None) -> T:
         """
         Create or update structure from json
         """
@@ -342,7 +345,7 @@ class Baseband:
                 field_value = serialized_settings[field_name]
                 if issubclass(field_type, Structure):
                     setattr(obj, field_name, Baseband.deserialize(field_value, field_type))
-                elif issubclass(field_type, Array) and issubclass(field_type._type_, Structure):
+                elif issubclass(field_type, Array) and issubclass(field_type._type_, Structure):  # type: ignore
                     element_type = field_type._type_
                     for i, item in enumerate(field_value):
                         getattr(obj, field_name)[i] = Baseband.deserialize(item, element_type, getattr(obj, field_name)[i]) # if input else None)

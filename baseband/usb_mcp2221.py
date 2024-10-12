@@ -21,18 +21,18 @@ class UsbMcp2221:
         self.mcp.I2C_Write(self.SLAVE_ADDR, data)
 
     def read(self, length: int) -> bytes:
-        return bytes(self.mcp.I2C_Read(self.SLAVE_ADDR, length))
+        return bytes(self.mcp.I2C_Read(self.SLAVE_ADDR, length))  # type: ignore
 
     def exchange(self, data: bytes, length: int) -> bytes:
         # For now: write_non_stop and read_repeated do not work with > 12..30 bytes
         # (depeding on PC!), hence this fix.
         self.mcp.I2C_Write(self.SLAVE_ADDR, data)
-        result: bytes = []
+        result = bytes()
         while length > 0:
             readlen = min(length, 12)
-            data = self.mcp.I2C_Read(self.SLAVE_ADDR, readlen)
+            data = self.mcp.I2C_Read(self.SLAVE_ADDR, readlen)  # type: ignore
             assert data != -1, 'I2C read error'
-            result.extend(data)
+            result += data
             length -= readlen
         return bytes(result)
 

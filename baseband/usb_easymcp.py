@@ -27,7 +27,7 @@ class UsbEasyMcp:
         assert seconds > 0, 'Pulse time must be > 0'
         assert gpio_nr >= 0 and gpio_nr <= 3, 'Invalid GPIO number, must be 0..3 for MCP2221A'
         params = {0: 'gp0', 1: 'gp1', 2: 'gp2', 3: 'gp3'}
-        self.mcp.set_pin_function(**{params[gpio_nr]: "GPIO_OUT"})
+        self.mcp.set_pin_function(**{params[gpio_nr]: "GPIO_OUT"})  # type: ignore
         self.mcp.GPIO_write(**{params[gpio_nr]: False})
         time.sleep(seconds)
         self.mcp.GPIO_write(**{params[gpio_nr]: True})

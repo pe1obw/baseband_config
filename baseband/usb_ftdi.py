@@ -23,7 +23,7 @@ class UsbFtdi:
     def __init__(self, serial: Optional[str] = None, description : Optional[str] = None):
         self._device = self._get_device(serial, description)
         self._i2c = I2cController()
-        self._i2c.configure(self._device, clockstretching=True, frequency=self.I2C_FREQUENCY)
+        self._i2c.configure(self._device, clockstretching=True, frequency=self.I2C_FREQUENCY)  # type: ignore
         self._slave = self._i2c.get_port(self.BB_SLAVE_ADDR)
         # Set the FT232H read latency a bit lower.
         # See <https://ftdichip.com/Support/Documents/AppNotes/AN232B-04_DataLatencyFlow.pdf> for details.

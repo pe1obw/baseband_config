@@ -38,7 +38,7 @@ class FirmwareControl:
     def __init__(self, slave):
         self._slave = slave
 
-    def get_flash_id(self) -> None:
+    def get_flash_id(self) -> bytearray:
         """
         Read manufacturer and device ID from the flash memory
         """
@@ -86,7 +86,7 @@ class FirmwareControl:
             if not status[0] & WRITE_IN_PROGRESS:
                 break
 
-    def _flash_write(self, start: int, data: bytearray):
+    def _flash_write(self, start: int, data: bytes):
         """
         Write data to a flash memory region
         """
@@ -101,7 +101,7 @@ class FirmwareControl:
             self._write_page(addr, data[addr-start:addr-start+page_size])
             addr += page_size
 
-    def _write_page(self, page_address: int, data: bytearray):
+    def _write_page(self, page_address: int, data: bytes):
         self._m25p80_command(WRITE_ENABLE, None, bytearray())
         self._m25p80_command(PAGE_PROGRAM, page_address, data)
         while True:
@@ -109,7 +109,7 @@ class FirmwareControl:
             if not status[0] & WRITE_IN_PROGRESS:
                 break
 
-    def _m25p80_command(self, command: int, flash_address: Optional[int], outdata: bytearray, nr_to_read: int = 0) -> bytearray:
+    def _m25p80_command(self, command: int, flash_address: Optional[int], outdata: bytes, nr_to_read: int = 0) -> bytearray:
         """
         Issue a command to the M25P80 flash memory.
         The Baseband acts as a SPI master to the flash memory.
