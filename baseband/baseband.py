@@ -206,7 +206,7 @@ class Baseband:
               f' generator_level_ch1={settings.nicam.generator_level_ch1}, generator_level_ch2={settings.nicam.generator_level_ch2},'
               f' generator_ena_ch1={settings.nicam.generator_ena_ch1}, generator_ena_ch2={settings.nicam.generator_ena_ch2},\n'
               f'  rf_frequency_khz={settings.nicam.rf_frequency_khz} kHz, rf_level={settings.nicam.rf_level},'
-              f' nicam_bandwidth={NICAM_BANDWIDTH(settings.nicam.nicam_bandwidth).name}, enable={settings.nicam.enable}')
+              f' nicam_bandwidth={NICAM_BANDWIDTH(settings.nicam.nicam_bandwidth).name}, invert_spectrum={settings.nicam.invert_spectrum} enable={settings.nicam.enable}')
         print(f'FM settings:')
         for i in range(0, 4):
             print(f'  {i}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'

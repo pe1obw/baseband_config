@@ -82,7 +82,8 @@ class NICAM_SETTINGS(Structure):
         ("generator_ena_ch1", c_uint8, 1),
         ("generator_ena_ch2", c_uint8, 1),
         ("nicam_bandwidth", c_uint8, 1),
-        ("enable", c_uint8, 1)
+        ("enable", c_uint8, 1),
+        ("invert_spectrum", c_uint8, 1)
     ]
 
 
