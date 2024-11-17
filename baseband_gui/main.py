@@ -6,9 +6,11 @@ Simple GUI for configuring the baseband board
 import logging
 import math
 import tkinter as tk
+from typing import Optional
 
 import customtkinter
 from nicam_dialog import NicamDialog
+from fm_dialog import FmDialog
 
 from baseband.baseband import Baseband
 from baseband.usb_easymcp import UsbEasyMcp
@@ -20,6 +22,7 @@ logger = logging.getLogger(__name__)
 NR_FM_CARRIERS = 4
 PEAK_FS = 32768
 FM_PEAK_FS = 1024
+BASEBAND_UPDATE_RATE = 100  # in ms
 
 
 def to_log(value: float) -> float:
@@ -60,7 +63,8 @@ class Gui(customtkinter.CTk):
         super().__init__()
         self._baseband = None
         self._settings = None
-        self._nicam_dialog = None
+        self._nicam_dialog: Optional[NicamDialog] = None
+        self._fm_dialog: list[Optional[FmDialog]] = [None] * NR_FM_CARRIERS
         self._usb_type = 'EasyMCP2221'
         self._construct_main_dialog()
 
@@ -99,7 +103,7 @@ class Gui(customtkinter.CTk):
         self._video_meter = customtkinter.CTkProgressBar(self._frame, width=VU_WIDTH, progress_color=VU_COLOR)
         self._video_meter.grid(row=1, column=1, padx=20, pady=YPAD)
         self._video_meter.set(0.1)
-        self._video_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._settings_dialog, width=SETTING_WIDTH)
+        self._video_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._settings_dialog, width=SETTING_WIDTH, state='disabled')
         self._video_settings.grid(row=1, column=2, padx=20, pady=YPAD)
 
         self._nicam_label = customtkinter.CTkLabel(self._frame, text='NICAM')
@@ -124,15 +128,25 @@ class Gui(customtkinter.CTk):
             self._fm_meter.append(customtkinter.CTkProgressBar(self._frame, width=VU_WIDTH, progress_color=VU_COLOR))
             self._fm_meter[i].grid(row=4+i, column=1, padx=20, pady=YPAD)
             self._fm_meter[i].set(0.1 * i)
-            self._fm_settings.append(customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._settings_dialog, width=SETTING_WIDTH))
+            self._fm_settings.append(customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=lambda i=i: self._fm_settings_dialog(i),
+                                                             width=SETTING_WIDTH))
             self._fm_settings[i].grid(row=4+i, column=2, padx=20, pady=YPAD)
 
     def _nicam_settings_dialog(self):
         if self._nicam_dialog is None or not self._nicam_dialog.winfo_exists():
             self._nicam_dialog = NicamDialog(self)
-        self._nicam_dialog.update_settings(self._settings)
+        self._nicam_dialog.update_controls(self._settings)
         self._nicam_dialog.focus()
         self._nicam_dialog.after(0, self._nicam_dialog.lift)  # hack!
+
+    def _fm_settings_dialog(self, index: int):
+        dialog = self._fm_dialog[index]
+        if dialog is None or not dialog.winfo_exists():
+            dialog = FmDialog(self, carrier_index=index)
+        dialog.update_controls(self._settings)
+        dialog.focus()
+        dialog.after(0, dialog.lift)
+        self._fm_dialog[index] = dialog
 
     def _connect(self):
         if self._baseband is None:
@@ -152,13 +166,36 @@ class Gui(customtkinter.CTk):
             self._info_label.configure(text=info)
 
             self._settings = self._baseband.read_settings()
-            self._update_settings()
+            self._update_controls()
+            self._timer = self.after(BASEBAND_UPDATE_RATE, self._baseband_tasks)
 
-            self._timer = self.after(1000, self._update_vu_meters)
+    def _baseband_tasks(self):
+        self._update_baseband()
+        self._update_vu_meters()
+        self._timer = self.after(BASEBAND_UPDATE_RATE, self._baseband_tasks)
 
-    def _update_settings(self):
-        if self._nicam_dialog is not None and self._nicam_dialog.winfo_exists():
-            self._nicam_dialog.update_settings(self._settings)
+    def _update_controls(self):
+        '''
+        Update the controls on all dialogs from the settings object.
+        '''
+        for dialog in [self._nicam_dialog] + self._fm_dialog:
+            if dialog is not None and dialog.winfo_exists():
+                dialog.update_controls(self._settings)
+
+    def _update_baseband(self):
+        '''
+        Update the settings object from the controls on all dialogs.
+        '''
+        if self._baseband is not None:
+            is_dirty = False
+            for dialog in [self._nicam_dialog] + self._fm_dialog:
+                if dialog is not None and dialog.winfo_exists():
+                    if dialog.is_dirty:
+                        dialog.clear_dirty()
+                        is_dirty = True
+            if self._settings is not None and is_dirty:
+                self._baseband.write_settings(self._settings)
+            is_dirty = False
 
     def _update_vu_meters(self):
         if self._baseband is not None:
@@ -169,7 +206,6 @@ class Gui(customtkinter.CTk):
             for i in range(NR_FM_CARRIERS):
                 fm_level = getattr(actuals, f'fm{i+1}_audio_peak') / FM_PEAK_FS
                 self._fm_meter[i].set(to_log(fm_level))
-            self._timer = self.after(1000, self._update_vu_meters)
 
     def _new_usb_type(self, event):
         self._usb_type = self._usb_combobox.get()
