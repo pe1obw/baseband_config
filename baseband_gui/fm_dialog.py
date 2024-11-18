@@ -13,7 +13,7 @@ generator_levels = ['0dB', '-6dB', '-12dB', '-18dB', '-24dB', '-30dB', '-36dB', 
 preemphasis_names = ['50us', '75us', 'J17', 'Flat']
 bandwidth_names = ['130', '180', '230', '280']
 modulation_names = ['FM', 'AM']
-max_carrier_level = 1024
+max_carrier_level = 1023
 
 
 class FmDialog(customtkinter.CTkToplevel):
@@ -62,18 +62,24 @@ class FmDialog(customtkinter.CTkToplevel):
         self._generator_enable = customtkinter.CTkCheckBox(self, text='Enable', command=self._change_checkbox)
         self._generator_enable.grid(row=row, column=2, padx=20, pady=pady, sticky='w')
 
-        row += 1
-        self._preemphasis_label = customtkinter.CTkLabel(self, text='Preemphasis')
-        self._preemphasis_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
-        self._preemphasis = customtkinter.CTkComboBox(self, values=preemphasis_names, command=self._change_combo, state='readonly')
-        self._preemphasis.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
-
         self._modulation_label = customtkinter.CTkLabel(self, text='Modulation')
         self._modulation = customtkinter.CTkComboBox(self, values=modulation_names, command=self._change_combo, state='readonly')
         if 0 <= self._idx <= 1:
             row += 1
             self._modulation_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
             self._modulation.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
+
+        row += 1
+        self._preemphasis_label = customtkinter.CTkLabel(self, text='Preemphasis')
+        self._preemphasis_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
+        self._preemphasis = customtkinter.CTkComboBox(self, values=preemphasis_names, command=self._change_combo, state='readonly')
+        self._preemphasis.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
+
+        row += 1
+        self._bandwidth_label = customtkinter.CTkLabel(self, text='RF bandwidth (kHz)')
+        self._bandwidth_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
+        self._bandwidth = customtkinter.CTkComboBox(self, values=bandwidth_names, command=self._change_combo, state='readonly')
+        self._bandwidth.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
 
         row += 1
         self._frequency_label = customtkinter.CTkLabel(self, text='Frequency (kHz)')
@@ -84,12 +90,6 @@ class FmDialog(customtkinter.CTkToplevel):
         self._frequency.bind('<Return>', self._change_text)
         self._frequency.bind('<FocusOut>', self._change_text)
         self._frequency.grid(row=row, column=2, padx=20, pady=pady, sticky='w')
-
-        row += 1
-        self._bandwidth_label = customtkinter.CTkLabel(self, text='RF bandwidth (kHz)')
-        self._bandwidth_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
-        self._bandwidth = customtkinter.CTkComboBox(self, values=bandwidth_names, command=self._change_combo, state='readonly')
-        self._bandwidth.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
 
         row += 1
         self._rf_level_label = customtkinter.CTkLabel(self, text='RF level')
@@ -110,7 +110,6 @@ class FmDialog(customtkinter.CTkToplevel):
         self._is_dirty = True
 
     def _change_text(self, event):
-        print(f'event: {event}')
         if self._settings is None:
             return
         if self._frequency.get() != '':
@@ -152,6 +151,12 @@ class FmDialog(customtkinter.CTkToplevel):
         self._generator_level.set(generator_levels[settings.fm[self._idx].generator_level])
         self._generator_enable.select() if settings.fm[self._idx].generator_ena else self._generator_enable.deselect()
         self._modulation.set(modulation_names[settings.fm[self._idx].am])
+        if settings.fm[self._idx].am == 1:
+            self._preemphasis.configure(state='disabled')
+            self._bandwidth.configure(state='disabled')
+        else:
+            self._preemphasis.configure(state='normal')
+            self._bandwidth.configure(state='normal')
         self._frequency_slider.set(settings.fm[self._idx].rf_frequency_khz)
         self._frequency.delete(0, 'end')
         self._frequency.insert(0, settings.fm[self._idx].rf_frequency_khz)

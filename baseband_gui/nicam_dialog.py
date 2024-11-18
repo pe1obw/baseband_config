@@ -11,7 +11,7 @@ from baseband.settings import SETTINGS
 input_names = ['ADC1L', 'ADC1R', 'ADC2L', 'ADC2R', 'I2S1L', 'I2S1R', 'I2S2L', 'I2S2R', 'ADC1LR', 'ADC2LR', 'I2S1LR', 'I2S2LR', 'MUTE']
 bandwidth_names = ['700', '500']
 generator_levels = ['0dB', '-6dB', '-12dB', '-18dB', '-24dB', '-30dB', '-36dB', '-42dB', '-48dB', '-54dB', '-60dB', '-66dB', '-72dB', '-78dB', '-84dB', '-90dB']
-max_nicam_level = 1024
+max_nicam_level = 1023
 
 
 class NicamDialog(customtkinter.CTkToplevel):
