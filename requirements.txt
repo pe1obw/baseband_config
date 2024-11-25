@@ -1,10 +1,12 @@
 altgraph==0.17.4
+CTkMessagebox==2.7
 customtkinter==5.2.2
 darkdetect==0.8.0
 EasyMCP2221==1.7.2
 hidapi==0.14.0
 packaging==24.1
 pefile==2024.8.26
+pillow==11.0.0
 pyftdi==0.55.3
 pyinstaller==6.10.0
 pyinstaller-hooks-contrib==2024.8
