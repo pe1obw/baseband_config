@@ -11,6 +11,7 @@ from typing import Optional
 
 import customtkinter
 from CTkMessagebox import CTkMessagebox
+from baseband.settings import NR_FM_CARRIERS
 from generator_dialog import GeneratorDialog
 from fm_dialog import FmDialog
 from nicam_dialog import NicamDialog
@@ -23,7 +24,6 @@ from baseband.usb_mcp2221 import UsbMcp2221
 
 logger = logging.getLogger(__name__)
 
-NR_FM_CARRIERS = 4
 PEAK_FS = 32768
 FM_PEAK_FS = 1024
 BASEBAND_UPDATE_RATE = 100  # in ms
@@ -90,7 +90,7 @@ class Gui(customtkinter.CTk):
         SETTING_TEXT = 'Setup'
 
         self.title('Baseband settings')
-        self.geometry('600x500')
+        self.geometry('750x500')
         # self.resizable(False, False)
         self.grid_columnconfigure(0, weight=1)
 
@@ -199,19 +199,26 @@ class Gui(customtkinter.CTk):
 
     def _connect(self):
         if self._baseband is None:
-            if self._usb_type == 'FTDI':
-                usb_driver = UsbMcp2221()
-            elif self._usb_type == 'EasyMCP2221':
-                usb_driver = UsbEasyMcp()
-            else:
-                usb_driver = UsbFtdi()
-            logger.info(f'Connecting to baseband board using {usb_driver.__class__.__name__}')
-            self._baseband = Baseband(usb_driver)
-            info = self._baseband.get_info()
+            try:
+                if self._usb_type == 'FTDI':
+                    usb_driver = UsbMcp2221()
+                elif self._usb_type == 'EasyMCP2221':
+                    usb_driver = UsbEasyMcp()
+                else:
+                    usb_driver = UsbFtdi()
+                assert usb_driver is not None
+                logger.info(f'Connecting to baseband board using {usb_driver.__class__.__name__}')
+                baseband = Baseband(usb_driver)
+                info = baseband.get_info()
+            except Exception as e:
+                logger.error(f'Error connecting to baseband board: {e}')
+                self._info_label.configure(text=f'Error connecting to baseband board\n{e}')
+                return
 
+            self._baseband = baseband
             info = (f'Hardware version: {info["hw_version"]}\n'
                     f'FPGA version: {info["fpga_version"]}\n'
-                    f'Software version: {info["sw_version"]}{" (bootloader, no image!)" if info["sw_version"] == "0.0" else ""}')
+                    f'Firmware version: {info["sw_version"]}{" (bootloader, no image!)" if info["sw_version"] == "0.0" else ""}')
             self._info_label.configure(text=info)
 
             self._settings = self._baseband.read_settings()
@@ -243,6 +250,7 @@ class Gui(customtkinter.CTk):
                         dialog.clear_dirty()
                         is_dirty = True
             if self._settings is not None and is_dirty:
+                self._update_controls()
                 self._update_baseband()
             is_dirty = False
 

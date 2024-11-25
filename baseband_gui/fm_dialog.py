@@ -106,7 +106,6 @@ class FmDialog(customtkinter.CTkToplevel):
             return
         self._settings.fm[self._idx].enable = self._fm_enable.get()
         self._settings.fm[self._idx].generator_ena = self._generator_enable.get()
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_text(self, event):
@@ -116,7 +115,6 @@ class FmDialog(customtkinter.CTkToplevel):
             self._settings.fm[self._idx].rf_frequency_khz = int(self._frequency.get())
         if self._rf_level.get() != '':
             self._settings.fm[self._idx].rf_level = int(self._rf_level.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_slider(self, event):
@@ -124,7 +122,6 @@ class FmDialog(customtkinter.CTkToplevel):
             return
         self._settings.fm[self._idx].rf_frequency_khz = int(self._frequency_slider.get())
         self._settings.fm[self._idx].rf_level = int(self._rf_level_slider.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_combo(self, event):
@@ -135,7 +132,6 @@ class FmDialog(customtkinter.CTkToplevel):
         self._settings.fm[self._idx].preemphasis = preemphasis_names.index(self._preemphasis.get())
         self._settings.fm[self._idx].fm_bandwidth = bandwidth_names.index(self._bandwidth.get())
         self._settings.fm[self._idx].am = modulation_names.index(self._modulation.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def update_controls(self, settings: Optional[SETTINGS]):

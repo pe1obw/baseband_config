@@ -10,7 +10,7 @@ from typing import Any, Optional, TypeVar
 from baseband.actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
 from baseband.info import INFO
-from baseband.settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
+from baseband.settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, NR_FM_CARRIERS, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 
 I2C_ACCESS_DISPLAY = bytearray([0x00, 0x00])  # R/W, maps to display memory, 40 columns x 16 rows = 640 bytes
 I2C_ACCESS_FONT_MEMORY = bytearray([0x08, 0x00])  # R/W, maps to font memory, 128 characters, each 8x16 pixels = 2048 bytes
@@ -208,7 +208,7 @@ class Baseband:
               f'  rf_frequency_khz={settings.nicam.rf_frequency_khz} kHz, rf_level={settings.nicam.rf_level},'
               f' nicam_bandwidth={NICAM_BANDWIDTH(settings.nicam.nicam_bandwidth).name}, invert_spectrum={settings.nicam.invert_spectrum} enable={settings.nicam.enable}')
         print(f'FM settings:')
-        for i in range(0, 4):
+        for i in range(0, NR_FM_CARRIERS):
             print(f'  {i}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
                 f' rf_level={settings.fm[i].rf_level},'
                 f' input={INPUT(settings.fm[i].input).name},'

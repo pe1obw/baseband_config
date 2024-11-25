@@ -107,7 +107,6 @@ class VideoDialog(customtkinter.CTkToplevel):
         self._settings.video.pattern_enable = self._pattern_enable.get()
         self._settings.video.invert_video = self._video_invert.get()
         self._settings.video.filter_bypass = self._video_filter_bypass.get()
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_text(self, event):
@@ -115,14 +114,12 @@ class VideoDialog(customtkinter.CTkToplevel):
             return
         if self._video_level.get() != '':
             self._settings.video.video_level = int(self._video_level.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_slider(self, event):
         if self._settings is None:
             return
         self._settings.video.video_level = int(self._video_level_slider.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_combo(self, event):
@@ -132,7 +129,6 @@ class VideoDialog(customtkinter.CTkToplevel):
         self._settings.video.video_mode = video_mode_names.index(self._mode.get())
         self._settings.video.osd_mode = osd_mode_names.index(self._osd_mode.get())
         # self._settings.video.pattern = pattern_names.index(self._pattern.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def update_controls(self, settings: Optional[SETTINGS]):

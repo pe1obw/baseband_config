@@ -7,6 +7,7 @@ Structs converted from .h file.
 from ctypes import Structure, c_uint16, c_uint8, c_char
 from enum import Enum
 
+NR_FM_CARRIERS = 4
 
 I2C_ACCESS_SETTINGS = bytearray([0x10, 0x00])
 I2C_ACCESS_COMMAND_UPDATE_SETTINGS = bytearray([0x30, 0x00])
@@ -121,7 +122,7 @@ class SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
         ("name", c_char*12),
-        ("fm", FM_SETTINGS*4),
+        ("fm", FM_SETTINGS*NR_FM_CARRIERS),
         ("nicam", NICAM_SETTINGS),
         ("video", VIDEO_SETTINGS),
         ("general", GENERAL_SETTINGS)

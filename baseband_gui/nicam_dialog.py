@@ -107,7 +107,6 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._settings.nicam.invert_spectrum = self._nicam_invert_spectrum.get()
         self._settings.nicam.generator_ena_ch1 = self._generator_enable_ch1.get()
         self._settings.nicam.generator_ena_ch2 = self._generator_enable_ch2.get()
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_text(self, event):
@@ -118,7 +117,6 @@ class NicamDialog(customtkinter.CTkToplevel):
             self._settings.nicam.rf_frequency_khz = int(self._nicam_frequency.get())
         if self._nicam_level.get() != '':
             self._settings.nicam.rf_level = int(self._nicam_level.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_slider(self, event):
@@ -126,7 +124,6 @@ class NicamDialog(customtkinter.CTkToplevel):
             return
         self._settings.nicam.rf_frequency_khz = int(self._nicam_frequency_slider.get())
         self._settings.nicam.rf_level = int(self._nicam_level_slider.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def _change_combo(self, event):
@@ -137,7 +134,6 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._settings.nicam.generator_level_ch1 = generator_levels.index(self._generator_level_ch1.get())
         self._settings.nicam.generator_level_ch2 = generator_levels.index(self._generator_level_ch2.get())
         self._settings.nicam.nicam_bandwidth = bandwidth_names.index(self._nicam_bandwidth.get())
-        self.update_controls(self._settings)
         self._is_dirty = True
 
     def update_controls(self, settings: Optional[SETTINGS]):
