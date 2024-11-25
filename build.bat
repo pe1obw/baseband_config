@@ -15,4 +15,4 @@ pip install -r requirements.txt
 pip install pyinstaller==6.10.0
 
 pyinstaller --onefile baseband_config\main.py --add-data "libusb0.dll;." -n baseband_config_cli
-pyinstaller --onefile baseband_gui\main.py --add-data "libusb0.dll;." -n baseband_config
+pyinstaller --windowed --onefile baseband_gui\main.py --add-data "libusb0.dll;." -n baseband_config
