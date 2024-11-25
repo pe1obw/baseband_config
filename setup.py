@@ -7,6 +7,7 @@ setup(
     entry_points={
         'console_scripts': [
             'baseband_config = baseband_config.main:main',
+            'baseband_gui = baseband_gui.main:main',
         ],
     },
     description='A package for controlling the Baseband device using an USB-i2c interface.',

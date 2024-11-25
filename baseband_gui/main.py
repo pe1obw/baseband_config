@@ -6,21 +6,20 @@ Simple GUI for configuring the baseband board
 import logging
 import math
 import tkinter as tk
-from turtle import st
 from typing import Optional
 
 import customtkinter
 from CTkMessagebox import CTkMessagebox
-from baseband.settings import NR_FM_CARRIERS
-from generator_dialog import GeneratorDialog
-from fm_dialog import FmDialog
-from nicam_dialog import NicamDialog
-from video_dialog import VideoDialog
 
 from baseband.baseband import Baseband
+from baseband.settings import NR_FM_CARRIERS
 from baseband.usb_easymcp import UsbEasyMcp
 from baseband.usb_ftdi import UsbFtdi
 from baseband.usb_mcp2221 import UsbMcp2221
+from baseband_gui.fm_dialog import FmDialog
+from baseband_gui.generator_dialog import GeneratorDialog
+from baseband_gui.nicam_dialog import NicamDialog
+from baseband_gui.video_dialog import VideoDialog
 
 logger = logging.getLogger(__name__)
 
