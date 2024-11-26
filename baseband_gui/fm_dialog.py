@@ -14,6 +14,7 @@ preemphasis_names = ['50us', '75us', 'J17', 'Flat']
 bandwidth_names = ['130', '180', '230', '280']
 modulation_names = ['FM', 'AM']
 max_carrier_level = 1023
+max_fm_frequency = 24575
 
 
 class FmDialog(customtkinter.CTkToplevel):
@@ -84,7 +85,7 @@ class FmDialog(customtkinter.CTkToplevel):
         row += 1
         self._frequency_label = customtkinter.CTkLabel(self, text='Frequency (kHz)')
         self._frequency_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
-        self._frequency_slider = customtkinter.CTkSlider(self, from_=0, to=10000, orientation='horizontal', command=self._change_slider)
+        self._frequency_slider = customtkinter.CTkSlider(self, from_=0, to=max_fm_frequency, orientation='horizontal', command=self._change_slider)
         self._frequency_slider.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
         self._frequency = customtkinter.CTkEntry(self, width=50)
         self._frequency.bind('<Return>', self._change_text)
