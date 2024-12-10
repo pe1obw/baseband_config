@@ -23,21 +23,22 @@ from baseband_gui.video_dialog import VideoDialog
 
 logger = logging.getLogger(__name__)
 
+PEAK_VIDEO_IN = 1023
 PEAK_FS = 32768
-FM_PEAK_FS = 1024
+FM_PEAK_FS = 2048 * 0.75  # TODO! Is this correct?
 BASEBAND_UPDATE_RATE = 100  # in ms
 
 SET_DEFAULTS = 'Set defaults'
 FLAT_WITH_OSD = 'Flat with OSD'
 
 
-def to_log(value: float) -> float:
+def to_log(value: float, min: float = -80) -> float:
     """
     for inputs between 0 and 1, convert to dB and scale to 0 (-80dBFS) to 1 (0dBFS)
     """
     if value == 0.0:
         return 0
-    vu = max(0, (20 * math.log10(value) / 80) + 1)
+    vu = max(0, (20 * math.log10(value) / -min) + 1)
     return vu
 
 
@@ -64,7 +65,52 @@ def read_pattern_file(filename):
     return buffer
 
 
+class VuMeter(customtkinter.CTkFrame):
+    def __init__(self, master, width=200, height=15, stereo=False):
+        super().__init__(master)
+        self._width = width
+        self._height = height
+        self._stereo = stereo
+
+        self._canvas = customtkinter.CTkCanvas(self, width=width, height=height)
+        self._canvas.grid(row=0, column=0)
+
+        # Draw progress bar
+        if stereo:
+            self._rec_idx_l = self._canvas.create_rectangle(0, 0, 0, 10, fill='green')
+            self._rec_idx_r = self._canvas.create_rectangle(0, height-10, 0, height, fill='green')
+        else:
+            self._rec_idx = self._canvas.create_rectangle(0, 10, 0, height-10, fill='green')
+
+        # Add vertical lines from begin to end, at regular intervals
+        nr_lines = 9
+        for i in range(nr_lines):
+            x = 3 + i * (width - 3) // (nr_lines - 1)
+            self._canvas.create_line(x, 0, x, height, fill='grey', width=2)
+
+    def set(self, value_max: float, value_min: float = 0.0):
+        '''
+        Set the progress bar
+        '''
+        color = 'green' if value_min >= 0 and value_max < 1.0 else 'red'
+        self._canvas.coords(self._rec_idx, self._width * value_min, 10, self._width * value_max, self._height - 10)
+        self._canvas.itemconfig(self._rec_idx, fill=color)
+
+    def set_stereo(self, left: float, right: float):
+        '''
+        Set the progress bar for stereo
+        '''
+        l_color = 'green' if left < 1.0 else 'red'
+        r_color = 'green' if right < 1.0 else 'red'
+        self._canvas.coords(self._rec_idx_l, 0, 0, self._width * left, 6)
+        self._canvas.coords(self._rec_idx_r, 0, self._height - 4, self._width * right, self._height)
+        self._canvas.itemconfig(self._rec_idx_l, fill=l_color)
+        self._canvas.itemconfig(self._rec_idx_r, fill=r_color)
+
 class Gui(customtkinter.CTk):
+
+    VU_COLOR = 'green'
+
     def __init__(self):
         super().__init__()
         self._baseband = None
@@ -82,7 +128,6 @@ class Gui(customtkinter.CTk):
         return [self._video_dialog, self._nicam_dialog, self._generator_dialog] + self._fm_dialog
 
     def _construct_main_dialog(self):
-        VU_COLOR = 'green'
         VU_WIDTH = 200
         YPAD = 2
         BUTTON_WIDTH = 15
@@ -114,22 +159,16 @@ class Gui(customtkinter.CTk):
 
         self._video_label = customtkinter.CTkLabel(self._frame, text='Video')
         self._video_label.grid(row=1, column=0, padx=20, pady=YPAD)
-        self._video_meter = customtkinter.CTkProgressBar(self._frame, width=VU_WIDTH, progress_color=VU_COLOR)
+        self._video_meter = VuMeter(self._frame, width=VU_WIDTH)
         self._video_meter.grid(row=1, column=1, padx=20, pady=YPAD)
-        self._video_meter.set(0.1)
+        self._video_meter.set(0.5, 0.5)
         self._video_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._video_settings_dialog, width=BUTTON_WIDTH)
         self._video_settings.grid(row=1, column=2, padx=20, pady=YPAD)
 
         self._nicam_label = customtkinter.CTkLabel(self._frame, text='NICAM')
         self._nicam_label.grid(row=2, column=0, padx=20, pady=0)
-        self._nicam_meter_l = customtkinter.CTkProgressBar(self._frame, width=VU_WIDTH, progress_color=VU_COLOR)
-        self._nicam_meter_l.grid(row=2, column=1, padx=20, pady=0)
-        self._nicam_meter_l.set(0.5)
-        self._nicam_label2 = customtkinter.CTkLabel(self._frame, text='')
-        self._nicam_label2.grid(row=3, column=0, padx=20, pady=0)
-        self._nicam_meter_r = customtkinter.CTkProgressBar(self._frame, width=VU_WIDTH, progress_color=VU_COLOR)
-        self._nicam_meter_r.grid(row=3, column=1, padx=20, pady=0)
-        self._nicam_meter_r.set(0.2)
+        self._nicam_meter = VuMeter(self._frame, width=VU_WIDTH, stereo=True)
+        self._nicam_meter.grid(row=2, column=1, padx=20, pady=0)
         self._nicam_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._nicam_settings_dialog, width=BUTTON_WIDTH)
         self._nicam_settings.grid(row=2, column=2, padx=20, pady=0)
 
@@ -139,7 +178,7 @@ class Gui(customtkinter.CTk):
         for i in range(NR_FM_CARRIERS):
             self._fm_label.append(customtkinter.CTkLabel(self._frame, text=f'FM {i+1}'))
             self._fm_label[i].grid(row=4+i, column=0, padx=20, pady=YPAD)
-            self._fm_meter.append(customtkinter.CTkProgressBar(self._frame, width=VU_WIDTH, progress_color=VU_COLOR))
+            self._fm_meter.append(VuMeter(self._frame, width=VU_WIDTH))
             self._fm_meter[i].grid(row=4+i, column=1, padx=20, pady=YPAD)
             self._fm_meter[i].set(0.1 * i)
             self._fm_settings.append(customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=lambda i=i: self._fm_settings_dialog(i),
@@ -149,7 +188,7 @@ class Gui(customtkinter.CTk):
         self._audio_generator_label = customtkinter.CTkLabel(self._frame, text='Audio generator')
         self._audio_generator_label.grid(row=8, column=0, padx=20, pady=YPAD)
         self._audio_generator_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._generator_settings_dialog, width=BUTTON_WIDTH)
-        self._audio_generator_settings.grid(row=8, column=1, padx=20, pady=YPAD, sticky='w')
+        self._audio_generator_settings.grid(row=8, column=1, padx=20, pady=(YPAD,10), sticky='w')
 
         # Presets
         self._frame = customtkinter.CTkFrame(self)
@@ -260,12 +299,17 @@ class Gui(customtkinter.CTk):
     def _update_vu_meters(self):
         if self._baseband is not None:
             actuals = self._baseband.read_actuals()
-            self._video_meter.set((actuals.adc_in_max - actuals.adc_in_min) / 1024)
-            self._nicam_meter_l.set(to_log(actuals.adc1_left_audio_peak / PEAK_FS))
-            self._nicam_meter_r.set(to_log(actuals.adc1_right_audio_peak / PEAK_FS))
+            self._video_meter.set(actuals.adc_in_max / PEAK_VIDEO_IN, actuals.adc_in_min / PEAK_VIDEO_IN)
+            self._nicam_meter.set_stereo(to_log(actuals.nicam_left_peak / PEAK_FS), to_log(actuals.nicam_right_peak / PEAK_FS))
             for i in range(NR_FM_CARRIERS):
                 fm_level = getattr(actuals, f'fm{i+1}_audio_peak') / FM_PEAK_FS
-                self._fm_meter[i].set(to_log(fm_level))
+                self._fm_meter[i].set(to_log(fm_level, -20))
+                # if fm_level >= 1.0:
+                #     self._fm_meter[i].configure(progress_color='red')
+                # else:
+                #     self._fm_meter[i].configure(progress_color=self.VU_COLOR)
+                if i == 0:
+                    print(f'fm{i+1}_audio_peak: {fm_level}')
 
     def _new_usb_type(self, event):
         self._usb_type = self._usb_combobox.get()
