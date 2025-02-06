@@ -112,7 +112,8 @@ class GENERAL_SETTINGS(Structure):
         ("audio_nco_mode", c_uint16, 2),
         ("morse_speed", c_uint16, 2),
         ("morse_message_repeat_time", c_uint16, 10),
-        ("spare", c_uint16, 2),
+        ("peak1_input_i2s_select", c_uint16, 1),
+        ("peak2_input_i2s_select", c_uint16, 1),
         ("last_recalled_presetnr", c_uint16, 8),
         ("user_setting1", c_uint16, 8)
     ]

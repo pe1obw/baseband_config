@@ -125,6 +125,7 @@ class Gui(customtkinter.CTk):
         self._fm_dialog: list[Optional[FmDialog]] = [None] * NR_FM_CARRIERS
         self._generator_dialog: Optional[GeneratorDialog] = None
         self._usb_type = 'EasyMCP2221'
+        self._is_dirty = False
         self._construct_main_dialog()
 
     @property
@@ -165,11 +166,15 @@ class Gui(customtkinter.CTk):
         self._adc1_label.grid(row=1, column=0, padx=20, pady=YPAD)
         self._adc1_meter = VuMeter(self._frame, width=VU_WIDTH, height=30, stereo=True)
         self._adc1_meter.grid(row=1, column=1, padx=20, pady=0)
+        self._meter1_select_i2s = customtkinter.CTkCheckBox(self._frame, text='I2S', command=self._change_checkbox)
+        self._meter1_select_i2s.grid(row=1, column=2, padx=20, pady=0)
 
         self._adc2_label = customtkinter.CTkLabel(self._frame, text='ADC 2')
         self._adc2_label.grid(row=2, column=0, padx=20, pady=YPAD)
         self._adc2_meter = VuMeter(self._frame, width=VU_WIDTH, height=30, stereo=True)
         self._adc2_meter.grid(row=2, column=1, padx=20, pady=0)
+        self._meter2_select_i2s = customtkinter.CTkCheckBox(self._frame, text='I2S', command=self._change_checkbox)
+        self._meter2_select_i2s.grid(row=2, column=2, padx=20, pady=0)
 
         self._video_label = customtkinter.CTkLabel(self._frame, text='Video')
         self._video_label.grid(row=3, column=0, padx=20, pady=YPAD)
@@ -286,16 +291,20 @@ class Gui(customtkinter.CTk):
         '''
         Update the controls on all dialogs from the settings object.
         '''
+        if self._settings is None:
+            return
         for dialog in self._all_dialogs:
             if dialog is not None and dialog.winfo_exists():
                 dialog.update_controls(self._settings)
+            self._meter1_select_i2s.select() if self._settings.general.peak1_input_i2s_select else self._meter1_select_i2s.deselect()
+            self._meter2_select_i2s.select() if self._settings.general.peak2_input_i2s_select else self._meter2_select_i2s.deselect()
 
     def _check_for_changes(self):
         '''
         Update the settings object from the controls on all dialogs.
         '''
         if self._baseband is not None:
-            is_dirty = False
+            is_dirty = self._is_dirty
             for dialog in self._all_dialogs:
                 if dialog is not None and dialog.winfo_exists():
                     if dialog.is_dirty:
@@ -305,6 +314,7 @@ class Gui(customtkinter.CTk):
                 self._update_controls()
                 self._update_baseband()
             is_dirty = False
+            self._is_dirty = False
 
     def _update_baseband(self):
         if self._baseband is not None and self._settings is not None:
@@ -320,6 +330,13 @@ class Gui(customtkinter.CTk):
             for i in range(NR_FM_CARRIERS):
                 fm_level = getattr(actuals, f'fm{i+1}_audio_peak') / FM_PEAK_FS
                 self._fm_meter[i].set(to_log(fm_level, -20))
+
+    def _change_checkbox(self):
+        if self._settings is None:
+            return
+        self._settings.general.peak1_input_i2s_select = self._meter1_select_i2s.get()
+        self._settings.general.peak2_input_i2s_select = self._meter2_select_i2s.get()
+        self._is_dirty = True
 
     def _new_usb_type(self, event):
         self._usb_type = self._usb_combobox.get()
