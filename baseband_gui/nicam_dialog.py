@@ -3,6 +3,7 @@ Simple GUI for configuring the baseband board
 
 (C) 2024 PE1OBW, PE1MUD
 """
+import math
 from typing import Optional
 import customtkinter
 
@@ -12,6 +13,8 @@ input_names = ['ADC1L', 'ADC1R', 'ADC2L', 'ADC2R', 'I2S1L', 'I2S1R', 'I2S2L', 'I
 bandwidth_names = ['700', '500']
 generator_levels = ['0dB', '-6dB', '-12dB', '-18dB', '-24dB', '-30dB', '-36dB', '-42dB', '-48dB', '-54dB', '-60dB', '-66dB', '-72dB', '-78dB', '-84dB', '-90dB']
 max_nicam_level = 1023
+_min_carrier_level_db = -40
+_max_carrier_level_db = 0
 
 
 class NicamDialog(customtkinter.CTkToplevel):
@@ -86,12 +89,13 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._nicam_bandwidth.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
 
         row += 1
-        self._nicam_level_label = customtkinter.CTkLabel(self, text='RF level')
+        self._nicam_level_label = customtkinter.CTkLabel(self, text='RF level (dB)')
         self._nicam_level_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
-        self._nicam_level_slider = customtkinter.CTkSlider(self, from_=0, to=max_nicam_level, orientation='horizontal', command=self._change_slider)
+        self._nicam_level_slider = customtkinter.CTkSlider(self, from_=_min_carrier_level_db, to=_max_carrier_level_db, orientation='horizontal', command=self._change_slider)
         self._nicam_level_slider.grid(row=row, column=1, padx=20, pady=pady)
         self._nicam_level = customtkinter.CTkEntry(self, width=50)
         self._nicam_level.bind('<Return>', self._change_text)
+        self._nicam_level.bind('<FocusOut>', self._change_text)
         self._nicam_level.grid(row=row, column=2, padx=20, pady=pady, sticky='w')
 
         row += 1
@@ -99,6 +103,13 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._nicam_invert_spectrum_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
         self._nicam_invert_spectrum = customtkinter.CTkCheckBox(self, text='Invert')
         self._nicam_invert_spectrum.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
+
+    def _counts_to_rf_level(self, counts: int) -> float:
+        return int(round(20 * math.log10(counts / 1023.0)))
+
+    def _rf_level_to_counts(self, level: float) -> int:
+        clamped_level = min(_max_carrier_level_db, max(_min_carrier_level_db, level))
+        return int(round(1023 * 10 ** (clamped_level / 20)))
 
     def _change_checkbox(self):
         if self._settings is None:
@@ -110,20 +121,22 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._is_dirty = True
 
     def _change_text(self, event):
-        print(f'event: {event}')
         if self._settings is None:
             return
         if self._nicam_frequency.get() != '':
             self._settings.nicam.rf_frequency_khz = int(self._nicam_frequency.get())
         if self._nicam_level.get() != '':
-            self._settings.nicam.rf_level = int(self._nicam_level.get())
+            try:
+                self._settings.nicam.rf_level = self._rf_level_to_counts(float(self._nicam_level.get()))
+            except ValueError:
+                pass
         self._is_dirty = True
 
     def _change_slider(self, event):
         if self._settings is None:
             return
         self._settings.nicam.rf_frequency_khz = int(self._nicam_frequency_slider.get())
-        self._settings.nicam.rf_level = int(self._nicam_level_slider.get())
+        self._settings.nicam.rf_level = self._rf_level_to_counts(self._nicam_level_slider.get())
         self._is_dirty = True
 
     def _change_combo(self, event):
@@ -155,8 +168,10 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._nicam_frequency.delete(0, 'end')
         self._nicam_frequency.insert(0, settings.nicam.rf_frequency_khz)
         self._nicam_bandwidth.set(bandwidth_names[settings.nicam.nicam_bandwidth])
-        self._nicam_level_slider.set(settings.nicam.rf_level)
+
+        rf_dbs = self._counts_to_rf_level(settings.nicam.rf_level)
+        self._nicam_level_slider.set(rf_dbs)
         self._nicam_level.delete(0, 'end')
-        self._nicam_level.insert(0, settings.nicam.rf_level)
+        self._nicam_level.insert(0, f'{rf_dbs:.01f}')
 
         self._nicam_invert_spectrum.select() if settings.nicam.invert_spectrum else self._nicam_invert_spectrum.deselect()

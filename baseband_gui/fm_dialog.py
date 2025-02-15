@@ -3,6 +3,7 @@ Simple GUI for configuring the baseband board
 
 (C) 2024 PE1OBW, PE1MUD
 """
+import math
 from typing import Optional
 import customtkinter
 
@@ -13,7 +14,9 @@ generator_levels = ['0dB', '-6dB', '-12dB', '-18dB', '-24dB', '-30dB', '-36dB', 
 preemphasis_names = ['50us', '75us', 'J17', 'Flat']
 bandwidth_names = ['130', '180', '230', '280']
 modulation_names = ['FM', 'AM']
-max_carrier_level = 1023
+_min_carrier_level_db = -40
+_max_carrier_level_db = 0
+_max_carrier_level = 1023
 max_fm_frequency = 24575
 
 
@@ -35,6 +38,13 @@ class FmDialog(customtkinter.CTkToplevel):
 
     def clear_dirty(self):
         self._is_dirty = False
+
+    def _counts_to_rf_level(self, counts: int) -> float:
+        return int(round(20 * math.log10(counts / 1023.0)))
+
+    def _rf_level_to_counts(self, level: float) -> int:
+        clamped_level = min(_max_carrier_level_db, max(_min_carrier_level_db, level))
+        return int(round(1023 * 10 ** (clamped_level / 20)))
 
     def _create_widgets(self):
         pady = 5
@@ -93,9 +103,9 @@ class FmDialog(customtkinter.CTkToplevel):
         self._frequency.grid(row=row, column=2, padx=20, pady=pady, sticky='w')
 
         row += 1
-        self._rf_level_label = customtkinter.CTkLabel(self, text='RF level')
+        self._rf_level_label = customtkinter.CTkLabel(self, text='RF level (dB)')
         self._rf_level_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
-        self._rf_level_slider = customtkinter.CTkSlider(self, from_=0, to=max_carrier_level, orientation='horizontal', command=self._change_slider)
+        self._rf_level_slider = customtkinter.CTkSlider(self, from_=_min_carrier_level_db, to=_max_carrier_level_db, orientation='horizontal', command=self._change_slider)
         self._rf_level_slider.grid(row=row, column=1, padx=20, pady=pady)
         self._rf_level = customtkinter.CTkEntry(self, width=50)
         self._rf_level.bind('<Return>', self._change_text)
@@ -115,14 +125,17 @@ class FmDialog(customtkinter.CTkToplevel):
         if self._frequency.get() != '':
             self._settings.fm[self._idx].rf_frequency_khz = int(self._frequency.get())
         if self._rf_level.get() != '':
-            self._settings.fm[self._idx].rf_level = int(self._rf_level.get())
+            try:
+                self._settings.fm[self._idx].rf_level = self._rf_level_to_counts(float(self._rf_level.get()))
+            except ValueError:
+                pass
         self._is_dirty = True
 
     def _change_slider(self, event):
         if self._settings is None:
             return
         self._settings.fm[self._idx].rf_frequency_khz = int(self._frequency_slider.get())
-        self._settings.fm[self._idx].rf_level = int(self._rf_level_slider.get())
+        self._settings.fm[self._idx].rf_level = self._rf_level_to_counts(self._rf_level_slider.get())
         self._is_dirty = True
 
     def _change_combo(self, event):
@@ -159,6 +172,8 @@ class FmDialog(customtkinter.CTkToplevel):
         self._frequency.insert(0, settings.fm[self._idx].rf_frequency_khz)
         self._preemphasis.set(preemphasis_names[settings.fm[self._idx].preemphasis])
         self._bandwidth.set(bandwidth_names[settings.fm[self._idx].fm_bandwidth])
-        self._rf_level_slider.set(settings.fm[self._idx].rf_level)
+
+        rf_dbs = self._counts_to_rf_level(settings.fm[self._idx].rf_level)
+        self._rf_level_slider.set(rf_dbs)
         self._rf_level.delete(0, 'end')
-        self._rf_level.insert(0, settings.fm[self._idx].rf_level)
+        self._rf_level.insert(0, f'{rf_dbs:.01f}')
