@@ -73,6 +73,12 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._generator_enable_ch2.grid(row=row, column=2, padx=20, pady=pady, sticky='w')
 
         row += 1
+        self._nicam_585_button = customtkinter.CTkButton(self, text='5.85 MHz', command=self._change_to_585, width=15)
+        self._nicam_585_button.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
+        self._nicam_6552_button = customtkinter.CTkButton(self, text='6.552 MHz', command=self._change_to_6552, width=15)
+        self._nicam_6552_button.grid(row=row, column=1, padx=20, pady=pady, sticky='e')
+
+        row += 1
         self._nicam_frequency_label = customtkinter.CTkLabel(self, text='Frequency (kHz)')
         self._nicam_frequency_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
         self._nicam_frequency_slider = customtkinter.CTkSlider(self, from_=0, to=10000, orientation='horizontal', command=self._change_slider)
@@ -110,6 +116,20 @@ class NicamDialog(customtkinter.CTkToplevel):
     def _rf_level_to_counts(self, level: float) -> int:
         clamped_level = min(_max_carrier_level_db, max(_min_carrier_level_db, level))
         return int(round(1023 * 10 ** (clamped_level / 20)))
+
+    def _change_to_585(self):
+        if self._settings is None:
+            return
+        self._settings.nicam.rf_frequency_khz = 5850
+        self._settings.nicam.nicam_bandwidth = 1
+        self._is_dirty = True
+
+    def _change_to_6552(self):
+        if self._settings is None:
+            return
+        self._settings.nicam.rf_frequency_khz = 6552
+        self._settings.nicam.nicam_bandwidth = 0
+        self._is_dirty = True
 
     def _change_checkbox(self):
         if self._settings is None:
