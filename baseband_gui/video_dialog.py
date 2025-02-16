@@ -3,6 +3,7 @@ Simple GUI for configuring the baseband board
 
 (C) 2024 PE1OBW, PE1MUD
 """
+import math
 from typing import Optional
 import customtkinter
 
@@ -12,7 +13,9 @@ video_mode_names = ['Flat', 'PAL', 'NTSC', 'SECAM']
 osd_mode_names = ['Off', 'On', 'Auto']
 video_input_names = ['Video in', 'Video generator', 'Auto']
 pattern_names = ['None', 'Color bars', 'Crosshatch', 'Checkerboard', 'Color ramp', 'Color bars 75%']
-max_video_level = 255
+max_video_level = 127
+min_video_level_db = -30.0
+max_video_level_db = 0.0
 
 
 class VideoDialog(customtkinter.CTkToplevel):
@@ -78,9 +81,9 @@ class VideoDialog(customtkinter.CTkToplevel):
         self._pattern_enable.grid(row=row, column=2, padx=20, pady=pady, sticky='w')
 
         row += 1
-        self._video_level_label = customtkinter.CTkLabel(self, text='Video level')
+        self._video_level_label = customtkinter.CTkLabel(self, text='Video level (dB)')
         self._video_level_label.grid(row=row, column=0, padx=20, pady=pady, sticky='w')
-        self._video_level_slider = customtkinter.CTkSlider(self, from_=0, to=max_video_level, orientation='horizontal', command=self._change_slider)
+        self._video_level_slider = customtkinter.CTkSlider(self, from_=int(min_video_level_db), to=int(max_video_level_db), orientation='horizontal', command=self._change_slider)
         self._video_level_slider.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
         self._video_level = customtkinter.CTkEntry(self, width=50)
         self._video_level.bind('<Return>', self._change_text)
@@ -99,6 +102,21 @@ class VideoDialog(customtkinter.CTkToplevel):
         self._video_filter_bypass = customtkinter.CTkCheckBox(self, text='Bypass', command=self._change_checkbox)
         self._video_filter_bypass.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
 
+    def _counts_to_video_level(self, counts: int) -> float:
+        """
+        Convert a video level in counts to a video level in dB.
+        """
+        return 20.0 * math.log10(counts/max_video_level)
+
+    def _video_level_to_counts(self, level: float) -> int:
+        """
+        Convert a video level in dB to a video level in counts.
+        """
+        clamped_level = min(max_video_level_db, max(min_video_level_db, level))
+        counts = int(max_video_level * 10.0**(clamped_level/20.0))
+        print(f'level={level}, clamped_level={clamped_level}, counts={counts}')
+        return counts
+
     def _change_checkbox(self):
         if self._settings is None:
             return
@@ -113,13 +131,16 @@ class VideoDialog(customtkinter.CTkToplevel):
         if self._settings is None:
             return
         if self._video_level.get() != '':
-            self._settings.video.video_level = int(self._video_level.get())
+            try:
+                self._settings.video.video_level = self._video_level_to_counts(float(self._video_level.get()))
+            except ValueError:
+                pass
         self._is_dirty = True
 
     def _change_slider(self, event):
         if self._settings is None:
             return
-        self._settings.video.video_level = int(self._video_level_slider.get())
+        self._settings.video.video_level = self._video_level_to_counts(self._video_level_slider.get())
         self._is_dirty = True
 
     def _change_combo(self, event):
@@ -150,6 +171,7 @@ class VideoDialog(customtkinter.CTkToplevel):
         self._osd_mode.set(osd_mode_names[settings.video.osd_mode])
         # self._pattern.set(pattern_names[settings.video.pattern])
 
-        self._video_level_slider.set(settings.video.video_level)
+        level = self._counts_to_video_level(settings.video.video_level)
+        self._video_level_slider.set(level)
         self._video_level.delete(0, 'end')
-        self._video_level.insert(0, settings.video.video_level)
+        self._video_level.insert(0, f'{level:.1f}')

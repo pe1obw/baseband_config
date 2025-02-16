@@ -105,7 +105,7 @@ class NicamDialog(customtkinter.CTkToplevel):
         self._nicam_invert_spectrum.grid(row=row, column=1, padx=20, pady=pady, sticky='w')
 
     def _counts_to_rf_level(self, counts: int) -> float:
-        return int(round(20 * math.log10(counts / 1023.0)))
+        return 20.0 * math.log10(counts / 1023.0)
 
     def _rf_level_to_counts(self, level: float) -> int:
         clamped_level = min(_max_carrier_level_db, max(_min_carrier_level_db, level))
