@@ -26,7 +26,11 @@ logger = logging.getLogger(__name__)
 PEAK_VIDEO_IN = 1023
 ADC_FS = 32768
 PEAK_FS = 32768
+NICAM_PEAK_FS = 1024
 FM_PEAK_FS = 2048 * 0.75  # TODO! Is this correct?
+ADC_MIN_DB = -40
+NICAM_MIN_DB = -40
+FM_MIN_DB = -40
 BASEBAND_UPDATE_RATE = 100  # in ms
 
 SET_DEFAULTS = 'Set defaults'
@@ -67,37 +71,55 @@ def read_pattern_file(filename):
 
 
 class VuMeter(customtkinter.CTkFrame):
-    def __init__(self, master, width=200, height=15, stereo=False):
-        super().__init__(master)
-        self._width = width
-        self._height = height
+    def __init__(self, master, width=200, stereo=False, **kwargs):
+        super().__init__(master, width=width, height=25 if stereo else 15, **kwargs)
         self._stereo = stereo
+        self._geo = None
 
-        self._canvas = customtkinter.CTkCanvas(self, width=width, height=height, background='black')
-        self._canvas.grid(row=0, column=0)
+    def place(self, x, y):
+        super().place(x=x, y=y)
+        self.update()
+        self._update_dimensions()
 
-        # Draw progress bar
-        offs = 5
-        self._y1 = offs
-        self._y2 = self._height // 2 - offs
-        self._y3 = self._height // 2 + offs
-        self._y4 = self._height - offs
-        if stereo:
-            self._rec_idx_l = self._canvas.create_rectangle(0, self._y1, 0, self._y2, fill='lightgreen')
-            self._rec_idx_r = self._canvas.create_rectangle(0, self._y3, 0, self._y4, fill='lightgreen')
-        else:
-            self._rec_idx = self._canvas.create_rectangle(0, self._y1, 0, self._y4, fill='lightgreen')
+    def _draw_background(self):
+        # remove all
+        self._canvas.delete('all')
 
         # Add vertical lines from begin to end, at regular intervals
         nr_lines = 9
         for i in range(nr_lines):
-            x = 3 + i * (width - 3) // (nr_lines - 1)
-            self._canvas.create_line(x, 0, x, height, fill='grey', width=2)
+            x = 3 + i * (self._width - 3) // (nr_lines - 1)
+            self._canvas.create_line(x, 0, x, self._height, fill='grey', width=2)
+
+        if self._stereo:
+            self._rec_bg_l = self._canvas.create_rectangle(0, self._y1, self._width, self._y2, fill='darkgreen')
+            self._rec_bg_r = self._canvas.create_rectangle(0, self._y3, self._width, self._y4, fill='darkgreen')
+            self._rec_idx_l = self._canvas.create_rectangle(0, self._y1, 0, self._y2, fill='lightgreen')
+            self._rec_idx_r = self._canvas.create_rectangle(0, self._y3, 0, self._y4, fill='lightgreen')
+        else:
+            self._rec_bg = self._canvas.create_rectangle(0, self._y1, self._width, self._y4, fill='darkgreen')
+            self._rec_idx = self._canvas.create_rectangle(0, self._y1, 0, self._y4, fill='lightgreen')
+
+    def _update_dimensions(self):
+        geo = self.winfo_geometry()
+        if geo != self._geo:
+            self._geo = geo
+            self._width, self._height = [int(x) for x in geo.split('+')[0].split('x')]  # width, height
+            self._y1 = self._height / 5
+            self._y2 = 2 * (self._height / 5)
+            self._y3 = 3 * (self._height / 5)
+            self._y4 = 4 * (self._height / 5)
+            self._draw_background()
 
     def set(self, value_max: float, value_min: float = 0.0):
         '''
         Set the progress bar
         '''
+        self._update_dimensions()
+
+        # assure a minimum bar length
+        value_max = max(value_max, value_min + 0.03)
+
         color = 'lightgreen' if value_min >= 0 and value_max < 1.0 else 'red'
         self._canvas.coords(self._rec_idx, self._width * value_min, self._y1, self._width * value_max, self._y4)
         self._canvas.itemconfig(self._rec_idx, fill=color)
@@ -106,6 +128,11 @@ class VuMeter(customtkinter.CTkFrame):
         '''
         Set the progress bar for stereo
         '''
+        self._update_dimensions()
+        # assure a minimum bar length
+        left = max(left, 0.03)
+        right = max(right, 0.03)
+
         l_color = 'lightgreen' if left < 1.0 else 'red'
         r_color = 'lightgreen' if right < 1.0 else 'red'
         self._canvas.coords(self._rec_idx_l, 0, self._y1, self._width * left, self._y2)
@@ -133,96 +160,122 @@ class Gui(customtkinter.CTk):
         return [self._video_dialog, self._nicam_dialog, self._generator_dialog] + self._fm_dialog
 
     def _construct_main_dialog(self):
-        VU_WIDTH = 200
+        WINDOW_WIDTH = 560
+        WINDOW_HEIGHT = 570
+        VU_WIDTH = 180
         YPAD = 2
         BUTTON_WIDTH = 15
         SETTING_TEXT = 'Setup'
+        ROW_DISTANCE = 35
+        COL2 = 100
+        COL3 = 300
+        MARGIN = 10
+        FRAME_TITLE_COLOR = 'grey30'
 
+        # dark theme
+        customtkinter.set_appearance_mode("dark")
         self.title('Baseband settings')
-        self.geometry('550x500')
-        # self.resizable(False, False)
-        self.grid_columnconfigure(0, weight=1)
+        self.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')
+        self.resizable(False, False)
+        row = 10
 
         # Connections
-        self._frame = customtkinter.CTkFrame(self)
-        self._frame.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nsw")
+        frame_height = 50
+        self._frame = customtkinter.CTkFrame(self, height=frame_height, width=WINDOW_WIDTH-2*MARGIN)
+        self._frame.place(x=MARGIN, y=row)
+        frow = MARGIN
+        row += frame_height + MARGIN
 
-        self._settings_button = customtkinter.CTkButton(self._frame, text='Interface', command=self._settings_dialog)
-        self._settings_button.grid(row=0, column=0, padx=20, pady=10)
-
-        self._connect_button = customtkinter.CTkButton(self._frame, text='Connect', command=self._connect)
-        self._connect_button.grid(row=0, column=1, padx=20, pady=10)
-
+        self._settings_button = customtkinter.CTkButton(self._frame, text='Interface', width=BUTTON_WIDTH, command=self._settings_dialog)
+        self._settings_button.place(x=MARGIN, y=frow)
+        self._connect_button = customtkinter.CTkButton(self._frame, text='Connect', width=BUTTON_WIDTH, command=self._connect)
+        self._connect_button.place(x=MARGIN+COL2, y=frow)
         self._info_label = customtkinter.CTkLabel(self._frame, text='Not connected\n \n ')
-        self._info_label.grid(row=0, column=2, padx=20, pady=10)
+        self._info_label.place(x=MARGIN+COL3, y=frow)
 
         # Inputs
-        self._frame = customtkinter.CTkFrame(self)
-        self._frame.grid(row=1, column=0, padx=10, pady=(10, 0), sticky="nsw")
-        self._frame_label = customtkinter.CTkLabel(self._frame, text='Inputs')
-        self._frame_label.grid(row=0, column=0, padx=20, pady=YPAD, columnspan=3)
+        frame_height = 370
+        frame_width = WINDOW_WIDTH - 2*MARGIN
+        frow = MARGIN
+        self._frame = customtkinter.CTkFrame(self, height=frame_height, width=frame_width)
+        self._frame.place(x=MARGIN, y=row)
+        row += frame_height + MARGIN
+
+        self._frame_title = customtkinter.CTkLabel(self._frame, fg_color=FRAME_TITLE_COLOR, corner_radius=6, text=' Inputs', width=frame_width-2*MARGIN)
+        self._frame_title.place(x=MARGIN, y=frow)
+        frow += ROW_DISTANCE
 
         self._adc1_label = customtkinter.CTkLabel(self._frame, text='ADC 1')
-        self._adc1_label.grid(row=1, column=0, padx=20, pady=YPAD)
-        self._adc1_meter = VuMeter(self._frame, width=VU_WIDTH, height=30, stereo=True)
-        self._adc1_meter.grid(row=1, column=1, padx=20, pady=0)
+        self._adc1_label.place(x=MARGIN, y=frow)
+        self._adc1_meter = VuMeter(self._frame, width=VU_WIDTH, stereo=True)
+        self._adc1_meter.place(x=MARGIN+COL2, y=frow)
         self._meter1_select_i2s = customtkinter.CTkCheckBox(self._frame, text='I2S', command=self._change_checkbox)
-        self._meter1_select_i2s.grid(row=1, column=2, padx=20, pady=0)
+        self._meter1_select_i2s.place(x=MARGIN+COL3, y=frow)
+        frow += ROW_DISTANCE
 
         self._adc2_label = customtkinter.CTkLabel(self._frame, text='ADC 2')
-        self._adc2_label.grid(row=2, column=0, padx=20, pady=YPAD)
-        self._adc2_meter = VuMeter(self._frame, width=VU_WIDTH, height=30, stereo=True)
-        self._adc2_meter.grid(row=2, column=1, padx=20, pady=0)
+        self._adc2_label.place(x=MARGIN, y=frow)
+        self._adc2_meter = VuMeter(self._frame, width=VU_WIDTH, stereo=True)
+        self._adc2_meter.place(x=MARGIN+COL2, y=frow)
         self._meter2_select_i2s = customtkinter.CTkCheckBox(self._frame, text='I2S', command=self._change_checkbox)
-        self._meter2_select_i2s.grid(row=2, column=2, padx=20, pady=0)
+        self._meter2_select_i2s.place(x=MARGIN+COL3, y=frow)
+        frow += ROW_DISTANCE
 
         self._video_label = customtkinter.CTkLabel(self._frame, text='Video')
-        self._video_label.grid(row=3, column=0, padx=20, pady=YPAD)
+        self._video_label.place(x=MARGIN, y=frow)
         self._video_meter = VuMeter(self._frame, width=VU_WIDTH)
-        self._video_meter.grid(row=3, column=1, padx=20, pady=YPAD)
+        self._video_meter.place(x=MARGIN+COL2, y=frow+5)
         self._video_meter.set(0.4, 0.5)
         self._video_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._video_settings_dialog, width=BUTTON_WIDTH)
-        self._video_settings.grid(row=3, column=2, padx=20, pady=YPAD)
+        self._video_settings.place(x=MARGIN+COL3, y=frow)
+        frow += ROW_DISTANCE
 
         self._nicam_label = customtkinter.CTkLabel(self._frame, text='NICAM')
-        self._nicam_label.grid(row=4, column=0, padx=20, pady=0)
-        self._nicam_meter = VuMeter(self._frame, width=VU_WIDTH, height=30, stereo=True)
-        self._nicam_meter.grid(row=4, column=1, padx=20, pady=0)
+        self._nicam_label.place(x=MARGIN, y=frow)
+        self._nicam_meter = VuMeter(self._frame, width=VU_WIDTH, stereo=True)
+        self._nicam_meter.place(x=MARGIN+COL2, y=frow)
         self._nicam_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._nicam_settings_dialog, width=BUTTON_WIDTH)
-        self._nicam_settings.grid(row=4, column=2, padx=20, pady=0)
+        self._nicam_settings.place(x=MARGIN+COL3, y=frow)
+        frow += ROW_DISTANCE
 
         self._fm_label = []
         self._fm_meter = []
         self._fm_settings = []
         for i in range(NR_FM_CARRIERS):
             self._fm_label.append(customtkinter.CTkLabel(self._frame, text=f'FM {i+1}'))
-            self._fm_label[i].grid(row=6+i, column=0, padx=20, pady=YPAD)
+            self._fm_label[i].place(x=MARGIN, y=frow)
             self._fm_meter.append(VuMeter(self._frame, width=VU_WIDTH))
-            self._fm_meter[i].grid(row=6+i, column=1, padx=20, pady=YPAD)
+            self._fm_meter[i].place(x=MARGIN+COL2, y=frow+5)
             self._fm_meter[i].set(0.1 * i)
             self._fm_settings.append(customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=lambda i=i: self._fm_settings_dialog(i),
                                                              width=BUTTON_WIDTH))
-            self._fm_settings[i].grid(row=6+i, column=2, padx=20, pady=YPAD)
+            self._fm_settings[i].place(x=MARGIN+COL3, y=frow)
+            frow += ROW_DISTANCE
 
         self._audio_generator_label = customtkinter.CTkLabel(self._frame, text='Audio generator')
-        self._audio_generator_label.grid(row=10, column=0, padx=20, pady=YPAD)
+        self._audio_generator_label.place(x=MARGIN, y=frow)
         self._audio_generator_settings = customtkinter.CTkButton(self._frame, text=SETTING_TEXT, command=self._generator_settings_dialog, width=BUTTON_WIDTH)
-        self._audio_generator_settings.grid(row=10, column=2, padx=20, pady=(YPAD,10), sticky='w')
+        self._audio_generator_settings.place(x=MARGIN+COL3, y=frow)
 
         # Presets
-        self._frame = customtkinter.CTkFrame(self)
-        self._frame.grid(row=2, column=0, padx=10, pady=(10, 0), sticky="nsw")
-        self._frame_label = customtkinter.CTkLabel(self._frame, text='Presets')
-        self._frame_label.grid(row=0, column=0, padx=20, pady=YPAD, columnspan=3)
+        frame_height = 100
+        self._frame = customtkinter.CTkFrame(self, height=frame_height, width=WINDOW_WIDTH-2*MARGIN)
+        self._frame.place(x=MARGIN, y=row)
+        row += frame_height + MARGIN
+        frow = MARGIN
+
+        self._frame_title = customtkinter.CTkLabel(self._frame, text='Presets', fg_color=FRAME_TITLE_COLOR, corner_radius=6, width=frame_width-2*MARGIN)
+        self._frame_title.place(x=MARGIN, y=frow)
+        frow += ROW_DISTANCE
 
         presets = [SET_DEFAULTS, FLAT_WITH_OSD]
         self._load_preset_label = customtkinter.CTkLabel(self._frame, text='Preset')
-        self._load_preset_label.grid(row=1, column=0, padx=20, pady=YPAD)
-        self._selected_preset = customtkinter.CTkComboBox(self._frame, width=VU_WIDTH, values=presets, state='readonly')
-        self._selected_preset.grid(row=1, column=1, padx=20, pady=YPAD)
+        self._load_preset_label.place(x=MARGIN, y=frow)
+        self._selected_preset = customtkinter.CTkComboBox(self._frame, width=VU_WIDTH - 30, values=presets, state='readonly')
+        self._selected_preset.place(x=MARGIN+COL2, y=frow)
         self._selected_preset.set(presets[0])
         self._load_preset_button = customtkinter.CTkButton(self._frame, text='Load', width=BUTTON_WIDTH, command=self._load_preset)
-        self._load_preset_button.grid(row=1, column=2, padx=20, pady=YPAD)
+        self._load_preset_button.place(x=MARGIN+COL3, y=frow)
 
     def _video_settings_dialog(self):
         if self._video_dialog is None or not self._video_dialog.winfo_exists():
@@ -273,9 +326,8 @@ class Gui(customtkinter.CTk):
                 return
 
             self._baseband = baseband
-            info = (f'Hardware version: {info["hw_version"]}\n'
-                    f'FPGA version: {info["fpga_version"]}\n'
-                    f'Firmware version: {info["sw_version"]}{" (bootloader, no image!)" if info["sw_version"] == "0.0" else ""}')
+            info = (f'Firmware version: {info["sw_version"]}{" (bootloader, no image!)" if info["sw_version"] == "0.0" else ""}\n'
+                    f'Hardware version: {info["hw_version"]}, FPGA version: {info["fpga_version"]}')
             self._info_label.configure(text=info)
 
             self._settings = self._baseband.read_settings()
@@ -323,13 +375,16 @@ class Gui(customtkinter.CTk):
     def _update_vu_meters(self):
         if self._baseband is not None:
             actuals = self._baseband.read_actuals()
-            self._adc1_meter.set_stereo(to_log(actuals.adc1_left_audio_peak / ADC_FS), to_log(actuals.adc1_right_audio_peak / ADC_FS))
-            self._adc2_meter.set_stereo(to_log(actuals.adc2_left_audio_peak / ADC_FS), to_log(actuals.adc2_right_audio_peak / ADC_FS))
+            self._adc1_meter.set_stereo(to_log(actuals.adc1_left_audio_peak / ADC_FS, ADC_MIN_DB),
+                                        to_log(actuals.adc1_right_audio_peak / ADC_FS, ADC_MIN_DB))
+            self._adc2_meter.set_stereo(to_log(actuals.adc2_left_audio_peak / ADC_FS, ADC_MIN_DB),
+                                        to_log(actuals.adc2_right_audio_peak / ADC_FS, ADC_MIN_DB))
             self._video_meter.set(actuals.adc_in_min / PEAK_VIDEO_IN, actuals.adc_in_max / PEAK_VIDEO_IN)
-            self._nicam_meter.set_stereo(to_log(actuals.nicam_left_peak / PEAK_FS), to_log(actuals.nicam_right_peak / PEAK_FS))
+            self._nicam_meter.set_stereo(to_log(actuals.nicam_left_peak / NICAM_PEAK_FS, NICAM_MIN_DB),
+                                         to_log(actuals.nicam_right_peak / NICAM_PEAK_FS, NICAM_MIN_DB))
             for i in range(NR_FM_CARRIERS):
                 fm_level = getattr(actuals, f'fm{i+1}_audio_peak') / FM_PEAK_FS
-                self._fm_meter[i].set(to_log(fm_level, -20))
+                self._fm_meter[i].set(to_log(fm_level, FM_MIN_DB))
 
     def _change_checkbox(self):
         if self._settings is None:
