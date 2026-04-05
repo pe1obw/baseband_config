@@ -80,13 +80,31 @@ Then install the software:
   - For the FT232H: follow the instructions on
 <https://eblot.github.io/pyftdi/installation.html>. For Windows, you have to
 install the 'Zadig' tool, and replace the existing driver with `libusb-win32`.
-  - For the MCP2221A: under Windows, it worked out of the box for me. For Linux,
-follow the instructions on
-<https://learn.adafruit.com/circuitpython-libraries-on-any-computer-with-mcp2221/linux>
+  - For the MCP2221A: under Windows, it worked out of the box for me. For Linux, see below.
 - Download the codebase
 - Install the tool with `pip install -e .` (the `-e` option installs the
 project in 'editable' mode)
 - Run the tool with `baseband_config [options]`
+
+### Linux
+
+You can follow the instructions on <https://learn.adafruit.com/circuitpython-libraries-on-any-computer-with-mcp2221/linux>
+
+Install the system packages needed for hidapi (EasyMCP2221) and libusb (pyftdi), then add udev rules — without them, USB access requires sudo. This is the most common blocker on Linux.
+
+```bash
+sudo apt install libhidapi-hidraw0 libusb-1.0-0
+
+# For MCP2221A
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="00dd", MODE="0666"' | sudo tee /etc/udev/rules.d/99-mcp2221.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+
+# For FT232H
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6014", MODE="0666"' | sudo tee /etc/udev/rules.d/99-ftdi.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+### Examples
 
 Examples (replace `--usb_easymcp` by `--usb_ftdi` for an FTDI interface):
 
