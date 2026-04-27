@@ -14,7 +14,7 @@ from baseband.settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BAND
 
 BB_I2C_SLAVE_ADDRESS = 0xB0 // 2
 
-NR_PRESETS = 16
+NR_PRESETS = 32
 
 I2C_ACCESS_DISPLAY = bytearray([0x00, 0x00])  # R/W, maps to display memory, 40 columns x 16 rows = 640 bytes
 I2C_ACCESS_FONT_MEMORY = bytearray([0x08, 0x00])  # R/W, maps to font memory, 128 characters, each 8x16 pixels = 2048 bytes
