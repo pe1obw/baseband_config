@@ -117,13 +117,13 @@ baseband_config --help
 Show baseband info (version and actual settings)
 
 ```bash
-baseband_config --usb_easymcp --info
+baseband_config --usb_easymcp --bb --info
 ```
 
 To create a file with the settings, stored as json:
 
 ```bash
-baseband_config --usb_easymcp --settings_to_file settings.json`
+baseband_config --usb_easymcp --bb --settings_to_file settings.json`
 ```
 
 The settings file can be modified and its contents can be written back.
@@ -132,38 +132,38 @@ will be modified).
 To write back to the baseband:
 
 ```bash
-baseband_config --usb_easymcp --settings_from_file settings.json
+baseband_config --usb_easymcp --bb --settings_from_file settings.json
 ```
 
 To update the firmware and reboot when done:
 
 ```bash
-baseband_config --usb_easymcp --upgrade baseband_0.26.bin
-baseband_config --usb_easymcp --reboot
+baseband_config --usb_easymcp --bb --upgrade baseband_0.26.bin
+baseband_config --usb_easymcp --bb --reboot
 ```
 
 Change some settings:
 
 ```bash
-baseband_config --usb_easymcp --set fm.0.rf_frequency_khz=7020
-baseband_config --usb_easymcp --set video.video_level=100
-baseband_config --usb_easymcp --set video.video_mode=PAL
-baseband_config --usb_easymcp --set "name=23cm TX"
+baseband_config --usb_easymcp --bb --set fm.0.rf_frequency_khz=7020
+baseband_config --usb_easymcp --bb --set video.video_level=100
+baseband_config --usb_easymcp --bb --set video.video_mode=PAL
+baseband_config --usb_easymcp --bb --set "name=23cm TX"
 ```
 
 See the `settings.py` file for all possible fields in the settings string.
 To store the actual settings to preset 10:
 
 ```bash
-baseband_config --usb_easymcp --store_preset=10
+baseband_config --usb_easymcp --bb --store_preset=10
 ```
 
 To enable the on screen display (overlay), turn off the menu and show some text:
 
 ```bash
-baseband_config --usb_easymcp --set video.osd_mode=OSD_ON --set video.show_menu=0
-baseband_config --usb_easymcp --clear_osd
-baseband_config --usb_easymcp --write_osd "Hello\nYou can \iinvert\u text\0\0\0\0\0\0\0\0\0\0End of line"
+baseband_config --usb_easymcp --bb --set video.osd_mode=OSD_ON --set video.show_menu=0
+baseband_config --usb_easymcp --bb --clear_osd
+baseband_config --usb_easymcp --bb --write_osd "Hello\nYou can \iinvert\u text\0\0\0\0\0\0\0\0\0\0End of line"
 ```
 
 A '\0' inserts a 'transparent' space, a '\n' is a line feed and with '\i' and
@@ -173,11 +173,11 @@ To send out your call in morse, with 15 words per minute, every 5 minutes on FM 
 with a 500 Hz tone at -12 dB:
 
 ```bash
-baseband_config --usb_easymcp --set fm.0.generator_ena=1 --set fm.0.generator_level=2
-baseband_config --usb_easymcp --set fm.1.generator_ena=1 --set fm.1.generator_level=2
-baseband_config --usb_easymcp --set general.audio_nco_mode=NCO_MORSE --set general.audio_nco_frequency=500
-baseband_config --usb_easymcp --set general.morse_message_repeat_time=300 --set general.morse_speed=1
-baseband_config --usb_easymcp --set general.morse_message="PE1MUD"
+baseband_config --usb_easymcp --bb --set fm.0.generator_ena=1 --set fm.0.generator_level=2
+baseband_config --usb_easymcp --bb --set fm.1.generator_ena=1 --set fm.1.generator_level=2
+baseband_config --usb_easymcp --bb --set general.audio_nco_mode=NCO_MORSE --set general.audio_nco_frequency=500
+baseband_config --usb_easymcp --bb --set general.morse_message_repeat_time=300 --set general.morse_speed=1
+baseband_config --usb_easymcp --bb --set general.morse_message="PE1MUD"
 ```
 
 Note: the nco frequency is in Hz, level is `generator_level` * -6dB,

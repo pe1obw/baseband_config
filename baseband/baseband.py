@@ -12,6 +12,10 @@ from baseband.firmware_control import FirmwareControl
 from baseband.info import INFO
 from baseband.settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 
+BB_I2C_SLAVE_ADDRESS = 0xB0 // 2
+
+NR_PRESETS = 16
+
 I2C_ACCESS_DISPLAY = bytearray([0x00, 0x00])  # R/W, maps to display memory, 40 columns x 16 rows = 640 bytes
 I2C_ACCESS_FONT_MEMORY = bytearray([0x08, 0x00])  # R/W, maps to font memory, 128 characters, each 8x16 pixels = 2048 bytes
 I2C_ACCESS_SETTINGS = bytearray([0x10, 0x00])  # R/W, maps to SETTINGS
@@ -77,6 +81,7 @@ class Baseband:
             'fpga_version': info.fpga_version,
             'sw_version': f'{info.sw_version_major}.{info.sw_version_minor}'
         }
+
     def read_settings(self) -> SETTINGS:
         """
         Get Baseband settings
@@ -98,13 +103,13 @@ class Baseband:
         """
         raw_buffer = self._slave.exchange(I2C_ACCESS_READ_PRESET_STATUS, 4)
         flags = int.from_bytes(raw_buffer, byteorder='little')
-        return [flags & (1 << i) for i in range(32)]
+        return [flags & (1 << i) for i in range(NR_PRESETS)]
 
     def get_preset(self, preset_nr: int) -> SETTINGS:
         """
         Read the contents of preset, without activating it
         """
-        assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
+        assert preset_nr > 0 and preset_nr < NR_PRESETS, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_VIEW_PRESET, preset_nr)
         # Preset is now loaded in preview settings
         raw_buffer = self._slave.exchange(I2C_ACCESS_VIEW_SETTINGS, sizeof(SETTINGS))
@@ -114,21 +119,21 @@ class Baseband:
         """
         Load a preset
         """
-        assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
+        assert preset_nr > 0 and preset_nr < NR_PRESETS, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_READ_PRESET, preset_nr)
 
     def store_preset(self, preset_nr: int) -> None:
         """
         Store actual settings to a preset
         """
-        assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
+        assert preset_nr > 0 and preset_nr < NR_PRESETS, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_STORE_PRESET, preset_nr)
 
     def erase_preset(self, preset_nr: int) -> None:
         """
         Erase a preset
         """
-        assert preset_nr > 0 and preset_nr < 32, f'Invalid preset number {preset_nr}'
+        assert preset_nr > 0 and preset_nr < NR_PRESETS, f'Invalid preset number {preset_nr}'
         self._send_command(I2C_ACCESS_COMMAND_ERASE_PRESET, preset_nr)
 
     def set_default(self) -> None:
@@ -207,7 +212,7 @@ class Baseband:
               f' generator_ena_ch1={settings.nicam.generator_ena_ch1}, generator_ena_ch2={settings.nicam.generator_ena_ch2},\n'
               f'  rf_frequency_khz={settings.nicam.rf_frequency_khz} kHz, rf_level={settings.nicam.rf_level},'
               f' nicam_bandwidth={NICAM_BANDWIDTH(settings.nicam.nicam_bandwidth).name}, invert_spectrum={settings.nicam.invert_spectrum} enable={settings.nicam.enable}')
-        print(f'FM settings:')
+        print('FM settings:')
         for i in range(0, 4):
             print(f'  {i}: rf_frequency_khz={settings.fm[i].rf_frequency_khz} kHz,'
                 f' rf_level={settings.fm[i].rf_level},'
@@ -223,7 +228,9 @@ class Baseband:
               f' audio_nco_waveform={AUDIO_NCO_WAVEFORM(settings.general.audio_nco_waveform).name},'
               f' morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed},'
               f' morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
-              f'  last_recalled_presetnr={settings.general.last_recalled_presetnr}, user_setting1={settings.general.user_setting1}')
+              f'  last_recalled_presetnr={settings.general.last_recalled_presetnr}, user_setting1={settings.general.user_setting1}\n'
+              f'SDR settings:\n'
+              f'  {"%02X " * 32}' % tuple(settings.general.sdr_settings))
 
     def _handle_invert(self, str_in: str) -> str:
         """
