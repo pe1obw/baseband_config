@@ -15,6 +15,7 @@ class INFO(Structure):
         ("hw_version", c_uint8),
         ("fpga_version", c_uint8),
         ("sw_version_minor", c_uint8),
-        ("sw_version_major", c_uint8)
+        ("sw_version_major", c_uint8),
+        ("sw_version_patch", c_uint8)
     ]
 

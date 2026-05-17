@@ -7,10 +7,10 @@ import time
 from ctypes import Array, Structure, sizeof
 from typing import Any, Optional, TypeVar
 
-from baseband.actuals import HW_INPUTS
+from baseband.baseband_actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
 from baseband.info import INFO
-from baseband.settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
+from baseband.baseband_settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 
 BB_I2C_SLAVE_ADDRESS = 0xB0 // 2
 
@@ -79,7 +79,7 @@ class Baseband:
         return {
             'hw_version': info.hw_version,
             'fpga_version': info.fpga_version,
-            'sw_version': f'{info.sw_version_major}.{info.sw_version_minor}'
+            'sw_version': f'{info.sw_version_major}.{info.sw_version_minor}.{info.sw_version_patch}'
         }
 
     def read_settings(self) -> SETTINGS:
@@ -223,14 +223,18 @@ class Baseband:
                 f' fm_bandwidth={FM_BANDWIDTH(settings.fm[i].fm_bandwidth).name},', end='')
             print(f' am={settings.fm[i].am},' if i < 2 else '      ', end='')   # Only the first two can do AM
             print(f' enable={settings.fm[i].enable}')
+        print(f'SDR settings:\n'
+            f'  rf_frequency_khz={settings.sdr.frequency_khz} kHz, gain_db={settings.sdr.gain_db},'
+            f' bw_mhz={settings.sdr.bw_mhz}, fir_filter_mhz={settings.sdr.fir_filter_mhz}, baseband_gain={settings.sdr.bb_gain},'
+            f' enable={settings.sdr.enable}, spectrum_invert={settings.sdr.spectrum_invert}, output_channel={settings.sdr.output_channel},'
+            f' tx_mode={settings.sdr.tx_mode}')
         print(f'GENERAL settings:\n'
-              f'  audio_nco_frequency={settings.general.audio_nco_frequency} Hz, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},'
-              f' audio_nco_waveform={AUDIO_NCO_WAVEFORM(settings.general.audio_nco_waveform).name},'
-              f' morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed},'
-              f' morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
-              f'  last_recalled_presetnr={settings.general.last_recalled_presetnr}, user_setting1={settings.general.user_setting1}\n'
-              f'SDR settings:\n'
-              f'  {"%02X " * 32}' % tuple(settings.general.sdr_settings))
+            f'  audio_nco_frequency={settings.general.audio_nco_frequency} Hz, audio_nco_mode={AUDIO_NCO_MODE(settings.general.audio_nco_mode).name},'
+            f' audio_nco_waveform={AUDIO_NCO_WAVEFORM(settings.general.audio_nco_waveform).name},'
+            f' morse_message "{settings.general.morse_message.decode()}", morse_speed={settings.general.morse_speed},'
+            f' morse_message_repeat_time={settings.general.morse_message_repeat_time}\n'
+            f'  last_recalled_presetnr={settings.general.last_recalled_presetnr}, user_setting1={settings.general.user_setting1}\n'
+            f'  sequence_mask=0x{settings.general.sequence_mask:04x}, sequence_delay_ms={settings.general.sequence_delay_ms}\n')
 
     def _handle_invert(self, str_in: str) -> str:
         """

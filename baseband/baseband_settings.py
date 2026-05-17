@@ -102,6 +102,22 @@ class VIDEO_SETTINGS(Structure):
     ]
 
 
+class SDR_SETTINGS(Structure):
+    _pack_ = 1
+    _fields_ = [
+        ("frequency_khz", c_uint16),
+        ("gain_db", c_uint8),
+        ("bw_mhz", c_uint8),
+        ("bb_gain", c_uint16),
+        ("enable", c_uint8),
+        ("fir_filter_mhz", c_uint8),
+        ("spectrum_invert", c_uint8),
+        ("output_channel", c_uint8),
+        ("tx_mode", c_uint8),
+        ("power_on_mode", c_uint8),
+        ("reserved", c_uint8*14)   # 	uint8_t reserved[14];
+    ]
+
 class GENERAL_SETTINGS(Structure):
     _pack_ = 1
     _fields_ = [
@@ -114,7 +130,8 @@ class GENERAL_SETTINGS(Structure):
         ("spare", c_uint16, 2),
         ("last_recalled_presetnr", c_uint16, 8),
         ("user_setting1", c_uint16, 8),
-        ("sdr_settings", c_uint8*32)  # Maps to SDR_SETTINGS struct, but stored as bytes in BB
+        ("sequence_mask", c_uint16),
+        ("sequence_delay_ms", c_uint16)
     ]
 
 
@@ -125,5 +142,6 @@ class SETTINGS(Structure):
         ("fm", FM_SETTINGS*4),
         ("nicam", NICAM_SETTINGS),
         ("video", VIDEO_SETTINGS),
+        ("sdr", SDR_SETTINGS),
         ("general", GENERAL_SETTINGS)
     ]

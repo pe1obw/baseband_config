@@ -7,7 +7,7 @@ import time
 from ctypes import Array, Structure, sizeof
 from typing import Optional, TypeVar
 
-from baseband.actuals import HW_INPUTS
+from baseband.baseband_actuals import HW_INPUTS
 from baseband.firmware_control import FirmwareControl
 from baseband.sdr_info import SDR_INFO
 from baseband.sdr_settings import SDR_SETTINGS
@@ -59,6 +59,7 @@ class Sdr:
         info = SDR_INFO.from_buffer_copy(result)
         return {
             'sw_version': f'v{info.sw_version_major}.{info.sw_version_minor}.{info.sw_version_patch}{"-dirty" if info.sw_version_dirty else ""}',
+            'api_version': f'v{info.api_version_major}.{info.api_version_minor}',
             'ad9361_temperature': info.ad9361_temperature,
             'zynq_temperature': info.zynq_temperature
         }
@@ -185,7 +186,9 @@ class Sdr:
         """
         print(f'SDR settings:\n'
               f' RF frequency: {settings.frequency_khz/1000:.03f} MHz, TX gain: {settings.gain_db} dB, bandwidth: {settings.bw_mhz} MHz,'
-              f' FIR filter MHz: {settings.fir_filter_mhz} MHz, baseband gain: {settings.bb_gain/16384:.2f}x, enable: {settings.enable}')
+              f' FIR filter MHz: {settings.fir_filter_mhz} MHz, baseband gain: {settings.bb_gain/16384:.2f}x, enable: {settings.enable}\n'
+              f' Spectrum invert: {settings.spectrum_invert}, output channel: {settings.output_channel}, TX mode: {settings.tx_mode}, power on mode: {settings.power_on_mode}'
+              f' Enable HPF: {settings.enable_hpf}')
 
     def flash_firmware(self, firmware: bytes) -> None:
         """

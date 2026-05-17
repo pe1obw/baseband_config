@@ -15,6 +15,8 @@ class SDR_INFO(Structure):
         ("sw_version_minor", c_uint8),
         ("sw_version_patch", c_uint8),
         ("sw_version_dirty", c_uint8),
+        ("api_version_major", c_uint8),
+        ("api_version_minor", c_uint8),
         ("ad9361_temperature", c_uint8),
         ("zynq_temperature", c_uint8)
     ]
