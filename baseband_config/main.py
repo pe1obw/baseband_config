@@ -13,7 +13,7 @@ try:
 except ImportError:
     pass
 import time
-from baseband.baseband import NR_PRESETS, Baseband
+from baseband.baseband import BB_I2C_SLAVE_ADDRESS, NR_PRESETS, Baseband
 from baseband.sdr import Sdr, SDR_I2C_SLAVE_ADDRESS
 from baseband.sdr_settings import SDR_SETTINGS
 from baseband.baseband_settings import SETTINGS as BB_SETTINGS
@@ -51,11 +51,12 @@ def read_pattern_file(filename):
 def handle_sdr_commands(sdr : Sdr, args):
     # Read SDR info
     sdr_info = sdr.get_info()
-    print('SDR succesfully connected. Info:')
+    print('\nSDR succesfully connected.')
+    print('--------------------------')
     print(f'Software version:   {sdr_info["sw_version"]}\n'
         f'API version:        {sdr_info["api_version"]}\n'
         f'AD9361 temperature: {sdr_info["ad9361_temperature"]}°C\n'
-        f'Zynq temperature:   {sdr_info["zynq_temperature"]}°C\n')
+        f'Zynq temperature:   {sdr_info["zynq_temperature"]}°C')
 
     if args.set_default:
         sdr.set_default()
@@ -95,7 +96,8 @@ def handle_sdr_commands(sdr : Sdr, args):
 def handle_baseband_commands(bb : Baseband, args):
     # Read device info
     info = bb.get_info()
-    print('Baseband succesfully connected. Info:')
+    print('\nBaseband succesfully connected.')
+    print('-------------------------------')
     print(f'Hardware version:   {info["hw_version"]}\n'
         f'FPGA version:       {info["fpga_version"]}\n'
         f'Software version:   {info["sw_version"]}{" (bootloader, no image!)" if info["sw_version"] == "0.0" else ""}')
@@ -119,7 +121,7 @@ def handle_baseband_commands(bb : Baseband, args):
         print('\nActual settings:')
         settings = bb.read_settings()
         bb.dump_settings(settings)
-        print('\nPreset status:')
+        print('Preset status:')
         preset_flags = bb.load_preset_status()
         for address, flag in enumerate(preset_flags):
             if address == 0:
@@ -292,6 +294,7 @@ def main():
         handle_sdr_commands(sdr, args)
 
     if args.bb:
+        usb_driver.slave_addr = BB_I2C_SLAVE_ADDRESS
         handle_baseband_commands(bb, args)
 
 if __name__ == '__main__':
