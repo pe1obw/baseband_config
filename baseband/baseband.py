@@ -8,7 +8,7 @@ from ctypes import Array, Structure, sizeof
 from typing import Any, Optional, TypeVar
 
 from baseband.baseband_actuals import HW_INPUTS
-from baseband.firmware_control import FirmwareControl
+from baseband.firmware_control import FlashDriverFactory
 from baseband.info import INFO
 from baseband.baseband_settings import AUDIO_NCO_WAVEFORM, INPUT, AUDIO_NCO_MODE, FM_BANDWIDTH, INPUT_CH1, INPUT_CH2, NICAM_BANDWIDTH, OSD_MODE, PREEMPHASIS, SETTINGS, VIDEO_IN, VIDEO_MODE
 
@@ -314,11 +314,11 @@ class Baseband:
         """
         Upgrade Baseband firmware
         """
-        firmware_control = FirmwareControl(self._slave)
+        firmware_control = FlashDriverFactory(self._slave).get_flash_driver()
         firmware_control.flash_firmware(firmware)
 
     def read_firmware(self) -> bytes:
-        firmware_control = FirmwareControl(self._slave)
+        firmware_control = FlashDriverFactory(self._slave).get_flash_driver()
         return firmware_control.read_firmware()
 
     def read_actuals(self) -> HW_INPUTS:

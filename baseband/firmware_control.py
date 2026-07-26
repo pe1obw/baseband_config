@@ -14,41 +14,65 @@ FLASH_UPGRADE_END   = 0x0FFFFF
 FLASH_SECTOR_SIZE   = 0x010000
 FLASH_PAGE_SIZE     = 256
 
-# M25P80 commands
-WRITE_ENABLE = 0x06
-WRITE_DISABLE = 0x04
-READ_IDENTIFICATION = 0x9F
-READ_STATUS_REGISTER = 0x05
-WRITE_STATUS_REGISTER = 0x01
-READ_DATA_BYTES = 0x03
-PAGE_PROGRAM = 0x02
-SECTOR_ERASE = 0xD8
-BULK_ERASE = 0xC7
-
-# M25P80 status register bits
-WRITE_IN_PROGRESS = 1
-
 MIN_FIRMWARE_SIZE = 400000
 
 
-class FirmwareControl:
+class FlashDriverFactory:
     """
-    This class is responsible for flashing the firmware to the baseband board
+    Factory for firmware control classes. The actual implementation depends on the flash memory used on the baseband board.
     """
     def __init__(self, slave):
         self._slave = slave
+
+    def get_flash_driver(self):
+        if M25P80_FirmwareControl(self._slave).probe():
+            return M25P80_FirmwareControl(self._slave)
+        else:
+            raise NotImplementedError('Unsupported flash memory')
+
+
+class M25P80_FirmwareControl:
+    """
+    This class is responsible for flashing the firmware to the baseband board
+    """
+    FLASH_ID = [0x20, 0x20, 0x14]
+
+    # M25P80 commands
+    WRITE_ENABLE = 0x06
+    WRITE_DISABLE = 0x04
+    READ_IDENTIFICATION = 0x9F
+    READ_STATUS_REGISTER = 0x05
+    WRITE_STATUS_REGISTER = 0x01
+    READ_DATA_BYTES = 0x03
+    PAGE_PROGRAM = 0x02
+    SECTOR_ERASE = 0xD8
+    BULK_ERASE = 0xC7
+
+    # M25P80 status register bits
+    WRITE_IN_PROGRESS = 1
+
+    def __init__(self, slave):
+        self._slave = slave
+
+    def probe(self) -> bool:
+        """
+        Check if the flash memory is an M25P80 by reading the flash ID
+        """
+        flash_id = self.get_flash_id()
+        print(f'Flash ID: {flash_id.hex()}')
+        return flash_id == bytearray(self.FLASH_ID)  # Manufacturer ID (0x20) and Device ID (0x2015 for M25P80)
 
     def get_flash_id(self) -> bytearray:
         """
         Read manufacturer and device ID from the flash memory
         """
-        return self._m25p80_command(READ_IDENTIFICATION, None, bytearray(), 3)
+        return self._m25p80_command(self.READ_IDENTIFICATION, None, bytearray(), 3)
 
     def flash_firmware(self, firmware: bytes) -> None:
         """
         Flash firmware to the baseband board
         """
-        assert len(firmware) > MIN_FIRMWARE_SIZE and len(firmware) < FLASH_UPGRADE_END - FLASH_UPGRADE_START, f'Firmware size mismatch'
+        assert len(firmware) > MIN_FIRMWARE_SIZE and len(firmware) < FLASH_UPGRADE_END - FLASH_UPGRADE_START, 'Firmware size mismatch'
         self._flash_erase(FLASH_UPGRADE_START, FLASH_UPGRADE_END)
         self._flash_write(FLASH_UPGRADE_START, firmware)
 
@@ -61,7 +85,7 @@ class FirmwareControl:
         READ_BLOCK_SIZE = 1024
         firmware = bytearray()
         for addr in range(FLASH_UPGRADE_START, FLASH_UPGRADE_END, READ_BLOCK_SIZE):
-            data = self._m25p80_command(READ_DATA_BYTES, addr, bytearray(), READ_BLOCK_SIZE)
+            data = self._m25p80_command(self.READ_DATA_BYTES, addr, bytearray(), READ_BLOCK_SIZE)
             firmware += data
             if addr & 0xFFFF == 0:  # 64 kB progress
                 progress = 100 * (addr - FLASH_UPGRADE_START) / (FLASH_UPGRADE_END-FLASH_UPGRADE_START)
@@ -79,11 +103,11 @@ class FirmwareControl:
 
     def _erase_sector(self, sector_address: int):
         print(f'Erase sector at 0x{sector_address & ~(FLASH_SECTOR_SIZE-1):06X}')
-        self._m25p80_command(WRITE_ENABLE, None, bytearray())
-        self._m25p80_command(SECTOR_ERASE, sector_address, bytearray())
+        self._m25p80_command(self.WRITE_ENABLE, None, bytearray())
+        self._m25p80_command(self.SECTOR_ERASE, sector_address, bytearray())
         while True:
-            status = self._m25p80_command(READ_STATUS_REGISTER, None, bytearray(), 1)
-            if not status[0] & WRITE_IN_PROGRESS:
+            status = self._m25p80_command(self.READ_STATUS_REGISTER, None, bytearray(), 1)
+            if not status[0] & self.WRITE_IN_PROGRESS:
                 break
 
     def _flash_write(self, start: int, data: bytes):
@@ -102,11 +126,11 @@ class FirmwareControl:
             addr += page_size
 
     def _write_page(self, page_address: int, data: bytes):
-        self._m25p80_command(WRITE_ENABLE, None, bytearray())
-        self._m25p80_command(PAGE_PROGRAM, page_address, data)
+        self._m25p80_command(self.WRITE_ENABLE, None, bytearray())
+        self._m25p80_command(self.PAGE_PROGRAM, page_address, data)
         while True:
-            status = self._m25p80_command(READ_STATUS_REGISTER, None, bytearray(), 1)
-            if not status[0] & WRITE_IN_PROGRESS:
+            status = self._m25p80_command(self.READ_STATUS_REGISTER, None, bytearray(), 1)
+            if not status[0] & self.WRITE_IN_PROGRESS:
                 break
 
     def _m25p80_command(self, command: int, flash_address: Optional[int], outdata: bytes, nr_to_read: int = 0) -> bytearray:
@@ -114,13 +138,13 @@ class FirmwareControl:
         Issue a command to the M25P80 flash memory.
         The Baseband acts as a SPI master to the flash memory.
         """
-        assert command != BULK_ERASE, 'Bulk erase not allowed'
+        assert command != self.BULK_ERASE, 'Bulk erase not allowed'
         if flash_address:
             assert flash_address < FLASH_SIZE and flash_address >= 0, 'Address out of range'
-            assert not ((command == PAGE_PROGRAM or command == SECTOR_ERASE) and
+            assert not ((command == self.PAGE_PROGRAM or command == self.SECTOR_ERASE) and
                         (flash_address < FLASH_UPGRADE_START or flash_address > FLASH_UPGRADE_END)), 'write/erase not allowed outside upgrade region'
 
-        extra = 3 if command == READ_DATA_BYTES or command == PAGE_PROGRAM or command == SECTOR_ERASE else 0
+        extra = 3 if command == self.READ_DATA_BYTES or command == self.PAGE_PROGRAM or command == self.SECTOR_ERASE else 0
         num_bytes_to_transfer = 1 + extra + len(outdata) + nr_to_read
         address = (I2C_ACCESS_FLASH + num_bytes_to_transfer)
         header = bytearray([(address >> 8) & 255, address & 255, command])
