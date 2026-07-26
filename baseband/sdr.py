@@ -7,8 +7,6 @@ import time
 from ctypes import Array, Structure, sizeof
 from typing import Optional, TypeVar
 
-from baseband.baseband_actuals import HW_INPUTS
-from baseband.firmware_control import FirmwareControl
 from baseband.sdr_info import SDR_INFO
 from baseband.sdr_settings import SDR_SETTINGS
 
@@ -128,7 +126,7 @@ class Sdr:
         """
         Set a value by dot-separated setting name
         """
-        current = settings
+        current: Structure = settings
 
         # convert dot-separated setting name to a path of field names
         # and try to find corresponding fields in the settings struct.
@@ -185,28 +183,28 @@ class Sdr:
         Print the settings to the console
         """
         print(f'SDR settings:\n'
-              f' RF frequency: {settings.frequency_khz/1000:.03f} MHz, TX gain: {settings.gain_db} dB, bandwidth: {settings.bw_mhz} MHz,'
-              f' FIR filter MHz: {settings.fir_filter_mhz} MHz, baseband gain: {settings.bb_gain/16384:.2f}x, enable: {settings.enable}\n'
-              f' Spectrum invert: {settings.spectrum_invert}, output channel: {settings.output_channel}, TX mode: {settings.tx_mode}, power on mode: {settings.power_on_mode}'
-              f' Enable HPF: {settings.enable_hpf}')
+              f' RF: enable: {settings.enable}, frequency: {settings.frequency_khz/1000:.03f} MHz, gain: {settings.gain_db} dB, bandwidth: {settings.bw_mhz} MHz,'
+              f' FIR filter: {settings.fir_filter_mhz} MHz, output channel: {settings.output_channel}, TX mode: {settings.tx_mode},\n'
+              f'     spectrum invert: {settings.spectrum_invert}, power on mode: {settings.power_on_mode}\n'
+              f' Baseband: bb_gain: {settings.bb_gain} ({settings.bb_gain/16384:.2f}x), bb_offset: {settings.bb_offset} ({settings.bb_offset/32768:.2f}), enable HPF: {settings.enable_hpf}\n')
 
     def flash_firmware(self, firmware: bytes) -> None:
         """
-        Upgrade Baseband firmware
+        Upgrade SDR firmware
         """
-        firmware_control = FirmwareControl(self._slave)
-        firmware_control.flash_firmware(firmware)
+        raise NotImplementedError('Reading firmware is not implemented yet')
 
     def read_firmware(self) -> bytes:
-        firmware_control = FirmwareControl(self._slave)
-        return firmware_control.read_firmware()
+        """
+        Read SDR firmware
+        """
+        raise NotImplementedError('Reading firmware is not implemented yet')
 
-    def read_actuals(self) -> HW_INPUTS:
+    def read_actuals(self):
         """
-        Read actuals from the Baseband
+        Read actuals from the SDR
         """
-        raw_buffer = self._slave.exchange(I2C_ACCESS_READOUT, sizeof(HW_INPUTS))
-        return HW_INPUTS.from_buffer_copy(raw_buffer)
+        raise NotImplementedError('Reading firmware is not implemented yet')
 
     @staticmethod
     def serialize(structure_obj: Structure) -> dict:
@@ -225,7 +223,7 @@ class Sdr:
         return serialized_settings
 
     @staticmethod
-    def deserialize(serialized_settings: dict, structure: type[T], input: Optional[T] = None) -> T:
+    def deserialize(serialized_settings: dict, structure: type[T], input: T | None) -> T:
         """
         Create or update structure from json
         """

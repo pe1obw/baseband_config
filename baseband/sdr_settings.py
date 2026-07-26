@@ -25,4 +25,5 @@ class SDR_SETTINGS(Structure):
         ("tx_mode", c_uint8),
         ("power_on_mode", c_uint8),
         ("enable_hpf", c_uint8),
+        ("bb_offset", c_int16),
     ]
