@@ -98,7 +98,8 @@ class VIDEO_SETTINGS(Structure):
         ("filter_bypass", c_uint16, 1),
         ("show_menu", c_uint8, 1),
         ("pattern_enable", c_uint8, 1),
-        ("enable", c_uint8, 1)
+        ("enable", c_uint8, 1),
+        ("video_clamp_enable", c_uint8, 1),
     ]
 
 
